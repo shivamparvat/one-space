@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, {useEffect, useState} from "react"
 
 import { Avatar, AvatarFallback } from "@radix-ui/react-avatar"
 // import initials from "initials"
@@ -12,10 +12,46 @@ import { DateRange } from "react-day-picker"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import axios from "axios"
 // import { salesData, overviewChartData } from "@/constants/dummyData"
+interface FileMetadata {
+  Name: string;
+  Owner: string;
+  OwnerEmail: string;
+  MimeType: string;
+  Size: number;
+  CreatedTime: string;
+  ModifiedTime: string;
+  TotalUsers: number | null;
+  InternalUsers: number | null;
+  ExternalUsers: number | null;
+}
+
 
 export default function Page() {
   const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>(undefined)
+
+  const [files, setFiles] = useState<FileMetadata[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/v1/file/list');
+        setFiles(response.data.data); // Adjust based on your API response structure
+        console.log(response)
+      } catch (err) {
+        setError('Failed to fetch files');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFiles();
+  }, []);
+
   return (
     <div className="flex-col md:flex">
       <div className="flex-1 space-y-4">
