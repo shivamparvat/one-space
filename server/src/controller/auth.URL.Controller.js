@@ -1,5 +1,7 @@
 import { google } from "googleapis";
 import AppToken from "../Schema/apptoken.js";
+import { Dropbox } from "dropbox";
+import fetch from "node-fetch";
 
 export async function GoogleAuthUrl(req, res) {
   const oAuth2Client = new google.auth.OAuth2(
@@ -16,7 +18,7 @@ export async function GoogleAuthUrl(req, res) {
 }
 
 export async function GoogleCallback(req, res) {
-  const { code } = req.query;
+  const { code, state } = req.query;
 
   try {
     const oAuth2Client = new google.auth.OAuth2(
@@ -26,13 +28,93 @@ export async function GoogleCallback(req, res) {
     );
     const { tokens } = await oAuth2Client.getToken(code);
 
-    const newAuth = new AppToken({...tokens,state:"Google Drive"
+    const newAuth = new AppToken({
+      ...tokens,
+      state
     });
     await newAuth.save();
 
     return res.redirect("/dashboard"); // Change this to your desired redirect URL
   } catch (error) {
-  console.log(error)
+    console.log(error);
     return res.redirect("/dashboard");
+  }
+}
+
+// Set fetch for Dropbox since the SDK needs it
+
+const config = {
+  fetch,
+  clientId: process.env.DROPBOX_CLIENT_ID,
+  clientSecret: process.env.DROPBOX_CLIENT_SECRET
+};
+
+const dbx = new Dropbox(config);
+export async function DropboxAuthUrl(req, res) {
+  dbx.auth
+    .getAuthenticationUrl(
+      process.env.DROPBOX_REDIRECT_URI,
+      null,
+      "code",
+      "offline",
+      null,
+      "none",
+      false
+    )
+    .then(authUrl => {
+      res.writeHead(302, { Location: authUrl });
+      res.end();
+    });
+}
+
+// {
+//   const dbx = new Dropbox({
+//     fetch,
+//     clientId: process.env.DROPBOX_CLIENT_ID,
+//     clientSecret: process.env.DROPBOX_CLIENT_SECRET,
+//   });
+
+//   const authUrl = dbx.auth.getAuthenticationUrl(process.env.DROPBOX_REDIRECT_URI, null, 'code', 'offline', null, 'none', false)
+//   res.status(200).json({ authUrl });
+// }
+
+export async function DropboxCallback(req, res) {
+  const { code, state } = req.query;
+
+  try {
+    const dbx = new Dropbox({
+      fetch,
+      clientId: process.env.DROPBOX_CLIENT_ID,
+      clientSecret: process.env.DROPBOX_CLIENT_SECRET
+    });
+
+    const response = await dbx.auth.getAccessTokenFromCode(
+      process.env.DROPBOX_REDIRECT_URI,
+      code
+    );
+
+    const {
+      access_token,
+      refresh_token,
+      token_type,
+      scope,
+      expires_in
+    } = response.result;
+
+    const newAuth = new AppToken({
+      access_token,
+      refresh_token,
+      token_type,
+      scope,
+      expiry_date: expires_in,
+      state
+    });
+
+    await newAuth.save();
+
+    return res.redirect("/dashboard");
+  } catch (error) {
+    console.error(error);
+    return res.redirect("/dashboard"); // Handle error appropriately
   }
 }

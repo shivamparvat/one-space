@@ -27,7 +27,7 @@ export const oauthUrls = {
             response_type: "code",                // Use "token" for Implicit flow,
             state: "Google Drive",
             scope: "https://www.googleapis.com/auth/drive.file", // Scope for Google Drive
-
+            access_type: "offline"
         },
     },
     "OneDrive": {
@@ -51,8 +51,10 @@ export const oauthUrls = {
         params: {
             client_id: process.env.NEXT_PUBLIC_DROP_BOX_CLIENT, // Replace with your actual client ID
             response_type: "code",                // Use "token" for Implicit flow
-            redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,
+            redirect_uri: "http://localhost:5000/api/v1/auth/url/dropbox/callback",
+            token_access_type: "offline",
             state: "Dropbox",
+            scope: "files.metadata.read"
         },
     },
     // "Gmail": {
