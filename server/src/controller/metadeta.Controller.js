@@ -61,13 +61,143 @@ function listGoogleDriveFiles(auth) {
   });
 }
 
-async function initializeDropbox({ accessToken, refreshToken, clientId, clientSecret, expiryDate }) {
+const fetchProfilePhoto = async (dbx, userId) => {
+  try {
+    const userResponse = await dbx.usersGetAccount({ account_id: userId });
+    return userResponse.result.profile_photo_url || null;
+  } catch (error) {
+    console.warn(`No profile photo available for user ID ${userId}:`, error.message);
+    return null;
+  }
+};
+
+const fetchDetailedDropboxFileData = async (dbx) => {
+  return new Promise(async (resolve, reject) => {
+  const dropboxMimeTypeIconMap = {
+    'application/pdf': 'https://example.com/icons/pdf-icon.png',
+    'application/msword': 'https://example.com/icons/word-icon.png',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'https://example.com/icons/word-icon.png',
+    'application/vnd.ms-excel': 'https://example.com/icons/excel-icon.png',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'https://example.com/icons/excel-icon.png',
+    'application/vnd.ms-powerpoint': 'https://example.com/icons/ppt-icon.png',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'https://example.com/icons/ppt-icon.png',
+    'application/vnd.google-apps.document': 'https://example.com/icons/google-docs-icon.png',
+    'application/vnd.google-apps.spreadsheet': 'https://example.com/icons/google-sheets-icon.png',
+    'application/vnd.google-apps.presentation': 'https://example.com/icons/google-slides-icon.png',
+    'image/jpeg': 'https://example.com/icons/jpeg-icon.png',
+    'image/png': 'https://example.com/icons/png-icon.png',
+    'image/gif': 'https://example.com/icons/gif-icon.png',
+    'text/plain': 'https://example.com/icons/txt-icon.png',
+    'application/zip': 'https://example.com/icons/zip-icon.png',
+    'application/x-rar-compressed': 'https://example.com/icons/rar-icon.png',
+    'audio/mpeg': 'https://example.com/icons/audio-icon.png',
+    'video/mp4': 'https://example.com/icons/video-icon.png',
+    'application/json': 'https://example.com/icons/json-icon.png',
+    'application/javascript': 'https://example.com/icons/js-icon.png',
+    'application/xml': 'https://example.com/icons/xml-icon.png',
+    'application/epub+zip': 'https://example.com/icons/epub-icon.png',
+    'application/x-7z-compressed': 'https://example.com/icons/7z-icon.png',
+    'application/vnd.dropbox.folder': 'https://example.com/icons/folder-icon.png',
+    'application/vnd.dropbox.paper': 'https://example.com/icons/dropbox-paper-icon.png',
+    'image/svg+xml': 'https://example.com/icons/svg-icon.png',
+    'application/octet-stream': 'https://example.com/icons/binary-icon.png',
+    'default': 'https://example.com/icons/default-file-icon.png'
+  };
+  
+  
+
+  try {
+    let allFiles = [];
+    let response = await dbx.filesListFolder({ path: '' });
+    allFiles.push(...response.result.entries);
+
+    while (response.result.has_more) {
+      response = await dbx.filesListFolderContinue({ cursor: response.result.cursor });
+      allFiles.push(...response.result.entries);
+    }
+
+    for (let file of allFiles) {
+      if (file['.tag'] === 'file') {
+        const mimeType = file.mime_type || 'application/octet-stream';
+        const iconLink = dropboxMimeTypeIconMap[mimeType] || dropboxMimeTypeIconMap['default'];
+
+        let fileDetails = {
+          name: file.name,
+          id: file.id,
+          mimeType: mimeType,
+          size: file.size,
+          path_lower: file.path_lower,
+          path_display: file.path_display,
+          client_modified: file.client_modified,
+          server_modified: file.server_modified,
+          content_hash: file.content_hash,
+          shared: false,
+          permissions: [],
+          lastModifyingUser: null,
+          owners: [],
+          sharingUser: null,
+          webViewLink: null,
+          thumbnail: null,
+          iconLink: iconLink,
+        };
+
+        // Fetch sharing information to get owner and permission details
+        try {
+          const shareResponse = await dbx.sharingListFileMembers({ file: file.id });
+          if (shareResponse.result && shareResponse.result.users.length > 0) {
+            fileDetails.shared = true;
+            for (const user of shareResponse.result.users) {
+              const photoLink = await fetchProfilePhoto(dbx, user.user.account_id);
+              fileDetails.permissions.push({
+                displayName: user.user.display_name,
+                emailAddress: user.user.email,
+                is_inherited: user.is_inherited,
+                photoLink: photoLink,
+                role: user.access_type['.tag'] || 'viewer',
+              });
+            }
+          }
+        } catch (shareError) {
+          console.warn(`No sharing info available for file ${file.name}:`, shareError);
+        }
+
+        // Fetch the last modifying user's info
+        try {
+          const metadataResponse = await dbx.filesGetMetadata({ path: file.path_lower });
+          if (metadataResponse.result.sharing_info && metadataResponse.result.sharing_info.modified_by) {
+            const lastModifyingUser = metadataResponse.result.sharing_info.modified_by;
+            fileDetails.lastModifyingUser = {
+              displayName: lastModifyingUser.name,
+              emailAddress: lastModifyingUser.email,
+              photoLink: lastModifyingUser.profile_photo_url,
+            };
+          }
+        } catch (metaError) {
+          console.warn(`No metadata available for file ${file.name}:`, metaError.message);
+        }
+      }
+    }
+    resolve(allFiles)
+
+  } catch (error) {
+    console.error('Error fetching file metadata:', error);
+  }
+})
+};
+
+// Usage
+
+
+
+
+async function initializeDropbox({ accessToken, refreshToken, clientId, clientSecret, expiryDate, scope }) {
   const dbx = new Dropbox({
     fetch,
     clientId,
     clientSecret,
     accessToken,
     refreshToken,
+    scope
   });
 
   // Check if the access token is expired
@@ -98,7 +228,7 @@ export const fileMetadata = async (req, res) => {
   try {
     const connectedApps = await AppToken.find(); // Fetch all connected apps from MongoDB
 
-    const results = [];
+    let results = [];
 
     for (const app of connectedApps) {
       const {
@@ -118,43 +248,32 @@ export const fileMetadata = async (req, res) => {
             token_type,
             expiry_date
           });
-          // const files = await listGoogleDriveFiles(authClient);
-          // results.push({ appState: app.state, files });
+          const files = await listGoogleDriveFiles(authClient);
+          results = [...results,...files];
         }else if(app?.state == "Dropbox"){
-
-
           try {
-
-
-          const { dbx } = await initializeDropbox({
-            accessToken: access_token,
-            refreshToken: refresh_token,
-            clientId: process.env.DROPBOX_CLIENT_ID,
-            clientSecret: process.env.DROPBOX_CLIENT_SECRET,
-            expiryDate: expiry_date,
-          });
-
-            // Example: Get the user's account information
-            const accountInfo = await dbx.usersGetCurrentAccount();
-            console.log('Account Info:', accountInfo);
-
-            // Example: List files in the user's root folder
-            const files = await dbx.filesListFolder({ path: '' });
-            console.log('Files:', files);
-
-            // Return data if you want to use it further
-            console.table( {
-              accountInfo: accountInfo,
-              files: files,
+            const { dbx } = await initializeDropbox({
+              accessToken: access_token,
+              refreshToken: refresh_token,
+              clientId: process.env.DROPBOX_CLIENT_ID,
+              clientSecret: process.env.DROPBOX_CLIENT_SECRET,
+              expiryDate: expiry_date,
+              scope: "files.metadata.write files.content.read file_requests.write sharing.read contacts.write profile email sharing.write account_info.write"
             });
+            
+            const files = await fetchDetailedDropboxFileData(dbx)
+            results = [...results,...files];
           } catch (error) {
-            console.error('Error fetching Dropbox data:', error);
-            throw new Error('Could not fetch Dropbox data');
+            if (error.status === 401 && error.error.error['.tag'] === 'missing_scope') {
+              console.error('Missing required scope:', error.error.error.required_scope);
+              throw new Error(`Reauthorize with the missing scope: ${error.error.error.required_scope}`);
+            } else {
+              console.error('Error fetching Dropbox data:', error);
+            }
           }
 
 
         }
-        // results.push({ appState: app.state, files });
       } catch (error) {
         console.error("Error listing Google Drive files for app:", error);
       }

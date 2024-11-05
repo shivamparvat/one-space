@@ -54,7 +54,7 @@ export const oauthUrls = {
             redirect_uri: "http://localhost:5000/api/v1/auth/url/dropbox/callback",
             token_access_type: "offline",
             state: "Dropbox",
-            scope: "files.metadata.read"
+            scope: "files.metadata.write files.content.read file_requests.write sharing.read contacts.write profile email sharing.write account_info.write"
         },
     },
     // "Gmail": {

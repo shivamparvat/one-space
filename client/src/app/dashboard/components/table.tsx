@@ -404,8 +404,8 @@ export function DataTable({data}: DataTableProps) {
   const [rowSelection, setRowSelection] = React.useState({})
 
   const table = useReactTable({
-    // data,
-    data: datalocal,
+    data,
+    // data: datalocal,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,

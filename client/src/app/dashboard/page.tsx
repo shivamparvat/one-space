@@ -36,23 +36,22 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect(() => {
-  //   const fetchFiles = async () => {
-  //     try {
-  //       const response = await axios.get('http://localhost:5000/api/v1/file/list');
-  //       setFiles((response.data?.data || [])); 
-  //      } catch (err) {
-  //       setError('Failed to fetch files');
-  //       console.error(err);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/v1/file/list');
+        setFiles((response.data?.data || [])); 
+       } catch (err) {
+        setError('Failed to fetch files');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  //   fetchFiles();
-  // }, []);
+    fetchFiles();
+  }, []);
 
-  console.log(files[0]?.files || [], "filesfiles")
   return (
     <div className="flex-col md:flex">
       <div className="flex-1 space-y-4">
@@ -60,7 +59,7 @@ export default function Page() {
           <h2 className="text-3xl font-bold tracking-tight">Access Control</h2>
         </div>
 
-        <DataTable data={files[0]?.files || []} />
+        <DataTable data={files || []} />
       </div>
     </div>
   )
