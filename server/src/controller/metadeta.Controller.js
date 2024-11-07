@@ -29,7 +29,7 @@ export const fileMetadata = async (req, res) => {
         console.log("Serving data from cache");
         results = [...results, ...cachedData];
       } else {
-        const dbData = await FileMetadata.find({ orgId: cacheKey });
+        const dbData = await FileMetadataSchema.find({ orgId: cacheKey });
         if (dbData.length > 0) {
           console.log("Serving data from MongoDB");
           results = [...results, ...dbData];

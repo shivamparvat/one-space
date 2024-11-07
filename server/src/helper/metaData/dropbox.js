@@ -1,4 +1,4 @@
-import { dropboxMimeTypeIconMap } from "../../constants/metaData";
+import { dropboxMimeTypeIconMap } from "../../constants/metaData.js";
 import fetch from "node-fetch";
 import { Dropbox } from "dropbox";
 

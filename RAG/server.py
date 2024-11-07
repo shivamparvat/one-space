@@ -109,8 +109,8 @@ async def upload_file(file: UploadFile = File(...)):
 @app.post("/rank")
 async def rank_query(query: str):
     try:
-        # Generate embedding for the query
-        query_embedding = embedding_model.embed_text(query)
+        # Generate embedding for the query using `embed_query`
+        query_embedding = embedding_model.embed_query(query)
         
         # Perform similarity search in MongoDB by cosine similarity
         results = []
@@ -126,7 +126,27 @@ async def rank_query(query: str):
         # Sort results by similarity score in descending order and return top results
         results = sorted(results, key=lambda x: x["similarity_score"], reverse=True)[:5]
         
-        return {"results": results}
+        # Generate a prompt for ChatGPT
+        prompt = f"Answer the following question based on these documents:\n\nQuestion: {query}\n\n"
+        for i, result in enumerate(results, start=1):
+            prompt += f"Document {i}:\nContent: {result['content']}\n\n"
+        
+        prompt += "Provide a concise answer to the question based on the information above."
+
+        # Get response from ChatGPT
+        chat_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+
+        # Retrieve and return the answer from ChatGPT
+        answer = chat_response.choices[0].message["content"]
+        
+        return {"query": query, "answer": answer, "results": results}
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

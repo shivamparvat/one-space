@@ -1,100 +1,23 @@
+Welcome to the RAG Testing File!
 
+This file contains various pieces of information to test the capabilities of a RAG system, including general knowledge, data retrieval, and summarization abilities. 
 
-MR CARROT Issues and Missing Features
+Section 1: General Knowledge
+- The Eiffel Tower is located in Paris, France.
+- Python is a popular programming language used for data science, web development, automation, and artificial intelligence.
 
+Section 2: Historical Facts
+- The Great Wall of China was built over several dynasties to protect against invasions.
+- Leonardo da Vinci painted the Mona Lisa, which is currently housed in the Louvre Museum.
 
-Credentials:
+Section 3: Scientific Facts
+- Water freezes at 0°C and boils at 1000°C at sea level.
+- The speed of light is approximately 299,792,458 meters per second in a vacuum.
 
-Backend live URL: Click here to View
-Login credentials
-Email: bharat@sfswebtech.com
-Password: Bharat@123
+shivam birthday is 27th nov 
 
-Frontend UI Live: Click here to view
-Login credentials
-546128251
-Bharat@123
+Section 4: Fun Facts
+- Honey never spoils; it has an indefinite shelf life.
+- Bananas are berries, but strawberries are not.
 
-Issues Summary: 
-Performance Issues:
-Application is slow and frequently fails to log in.
-AWS server performance is causing connectivity issues; local testing used as a workaround.
-Observations and Missing Features
-Based on the recent review, here is an outline of the missing features and issues on both frontend and backend. Payment integration was requested as a priority, but additional issues need to be addressed:
-Homepage:
-Missing Features:
-Ability to display packages and subscription options.
-Complete control over homepage elements from the admin dashboard, including:
-Editing titles, texts, advertisements, promotions, and discounts.
-Issues:
-Profile update functionality is not working.
-Services Page:
-Missing Features:
-Service page setup.
-Functional Package API.
-Subscription options.
-
-
-Electronic Payment:
-Missing Features:
-Payment gateway integration.
-Health Blog:
-Missing Features:
-Blog pages for health-related content.
-Parent and Child Registration:
-Issues:
-Registration is non-functional on the frontend.
-Comprehensive Dashboard:
-Missing Features:
-Meal Statistics: Display daily, weekly, and monthly meal counts, categorised by type (regular, diabetic-friendly, allergen-free).
-Delivery and Restaurant Services Dashboard:
-Missing Features:
-Delivery Provider Role: Special user role for delivery providers with access to delivery addresses and scheduling based on geographic location.
-Integrated Financial System:
-Missing Features:
-Sales Reports: Daily and monthly sales summaries.
-Expense Reports: Tracking for delivery and packaging costs.
-Profit Reports: Financial summaries showing profit/loss.
-
-Backend Issues
-User Management:
-Unable to access the user section or create new users.
-
-Applicant Management:
-Unable to create applicants.
-Vacancy Management:
-Unable to create job vacancies.
-Error Handling:
-Application does not display error messages after query failures.
-Review Section:Unable to create review
-Design and User Experience Improvements
-Improvements to UI/UX are needed across the site.
-Testing and refinement of features are recommended in the admin section to ensure smooth functionality for different user types.
-I have set up both Frontend and Backend in the local system which helped me review your project in detail. I am also adding the screenshots for both below
-
-Please let me know if you have any questions!
-
-Backend
-
-
-
-Frontend
-
-Admin Dashboard
-
-The countries Delete option is not working
-Unable to create schools 
-Half Notifications prefill is not working 
-Fix user list on order create 
-Fix package meals meal last name 
-Fix Review user list and sub-order list name 
-Fix order list on sub-order  
-The delete user is not working 
-Fix sub-order list sub-order list in vacancies 
-All data input  must be selectable 
-package Filter giving error
-PackagesController API is not working
-school_serializer.rb file is missing and the school list API is not working
-GeneralHelper is giving an error
-Applicant API is not working
-
+End of File. Good luck with your RAG system testing!

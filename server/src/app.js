@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 import MetaRouter from './Routes/Meta.routes.js';
 import AuthUrlRouter from './Routes/auth.URL.Routes.js';
 import imageCache from './utiles/imageCache.js';
-import { registerDriveWatch } from './events/driveEvents.js';
+// import { registerDriveWatch } from './events/driveEvents.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,7 +25,7 @@ app.use("/api/v1/token", TokenRouter)
 app.use("/api/v1/file", MetaRouter)
 // app.use('/api', googleDriveRoutes);
 
-app.use("/api/v1/watch/watch", registerDriveWatch)
+// app.use("/api/v1/watch/watch", registerDriveWatch)
 
 app.get("/proxy-image", imageCache);
 
