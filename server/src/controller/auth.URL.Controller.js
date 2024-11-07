@@ -34,6 +34,37 @@ export async function GoogleCallback(req, res) {
     });
     await newAuth.save();
 
+
+
+    // oAuth2Client.setCredentials(tokens);
+
+    // // Initialize Google Drive service
+    // const drive = google.drive({ version: 'v3', auth: oAuth2Client });
+
+    // // Step 1: Get the startPageToken for monitoring all changes
+    // const { data: startPageData } = await drive.changes.getStartPageToken();
+    // const startPageToken = startPageData.startPageToken;
+
+    // // Step 2: Create a unique channel ID and set up the webhook URL
+    // const channelId = `channel_${state}_${Date.now()}`;
+    // const webhookUrl = `${process.env.BASE_WEBHOOK_URL}/api/drive-webhook`; // Webhook URL to receive notifications
+
+    // // Step 3: Set up the watch request on changes feed
+    // const watchRequest = {
+    //   resource: {
+    //     id: channelId,
+    //     type: 'web_hook',
+    //     address: webhookUrl, // Webhook URL to receive change notifications
+    //   },
+    // };
+
+    // // Subscribe to all changes using the startPageToken
+    // const response = await drive.changes.watch({ ...watchRequest, startPageToken });
+
+
+
+
+
     return res.redirect("/dashboard"); // Change this to your desired redirect URL
   } catch (error) {
     console.log(error);
