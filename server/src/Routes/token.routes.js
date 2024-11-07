@@ -1,6 +1,6 @@
 // TokenRouter.ts
 import express from 'express';
-import {connect,disconnect, listTokens} from '../controller/token.Contrroller.js';
+import {connect,disconnect, listTokens} from '../controller/token.Controller.js';
 
 const TokenRouter = express.Router();
 
