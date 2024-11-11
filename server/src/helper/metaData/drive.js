@@ -14,7 +14,7 @@ export function authorizeGoogleDrive(token) {
   }
   
 
-  export function listGoogleDriveFiles(auth) {
+export function listGoogleDriveFiles(auth) {
   return new Promise((resolve, reject) => {
     const drive = google.drive({ version: "v3", auth });
     drive.files.list(
@@ -27,7 +27,6 @@ export function authorizeGoogleDrive(token) {
           console.error("The API returned an error:", err);
           return reject(err);
         }
-
         const files = res.data.files;
         if (files.length) {
           resolve(files);
@@ -39,3 +38,6 @@ export function authorizeGoogleDrive(token) {
     );
   });
 }
+
+
+

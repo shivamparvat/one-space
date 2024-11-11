@@ -46,24 +46,23 @@ export async function GoogleCallback(req, res) {
     const startPageToken = startPageData.startPageToken;
 
     // Step 2: Create a unique channel ID and set up the webhook URL
-    const channelId = `channel_${state}_${Date.now()}`;
-    const webhookUrl = `${hostUrl}/api/v1/drive-webhook`; // Webhook URL to receive notifications
+    const channelId = `channel_${Date.now()}`.replace(/[^A-Za-z0-9-_+/=]/g, '');
+    const webhookUrl = `https://5dfd-106-222-217-104.ngrok-free.app/api/v1/webhook/drive`; // Webhook URL to receive notifications
 
+
+    console.log(channelId)
     // Step 3: Set up the watch request on changes feed
     const watchRequest = {
       resource: {
         id: channelId,
         type: "web_hook",
         address: webhookUrl // Webhook URL to receive change notifications
-      }
+      },
+      pageToken: startPageToken // Include the required pageToken here
     };
-
-    // Subscribe to all changes using the startPageToken
-    const response = await drive.changes.watch({
-      ...watchRequest,
-      startPageToken
-    });
-
+  
+    // Start watching for changes
+    const response = await drive.changes.watch(watchRequest);
     console.log(response);
 
     return res.redirect("/dashboard"); // Change this to your desired redirect URL

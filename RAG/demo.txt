@@ -1,7 +1,3 @@
-Welcome to the RAG Testing File!
-
-This file contains various pieces of information to test the capabilities of a RAG system, including general knowledge, data retrieval, and summarization abilities. 
-
 Section 1: General Knowledge
 - The Eiffel Tower is located in Paris, France.
 - Python is a popular programming language used for data science, web development, automation, and artificial intelligence.
@@ -11,10 +7,10 @@ Section 2: Historical Facts
 - Leonardo da Vinci painted the Mona Lisa, which is currently housed in the Louvre Museum.
 
 Section 3: Scientific Facts
-- Water freezes at 0°C and boils at 1000°C at sea level.
+- Water freezes at 0°C and boils at 100°C at sea level.
 - The speed of light is approximately 299,792,458 meters per second in a vacuum.
 
-shivam birthday is 27th nov 
+shivam birthday is 27/11/2000 
 
 Section 4: Fun Facts
 - Honey never spoils; it has an indefinite shelf life.

@@ -26,12 +26,12 @@ export const oauthUrls = {
             redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
             response_type: "code",                // Use "token" for Implicit flow,
             state: "Google Drive",
-            scope: "https://www.googleapis.com/auth/drive.file", // Scope for Google Drive
+            scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly", // Scope for Google Drive
             access_type: "offline"
         },
     },
     "OneDrive": {
-        id: 2,
+        id: 2,       
         name: 'OneDrive',
         logo: onedrive,
         authUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",

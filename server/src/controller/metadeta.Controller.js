@@ -25,8 +25,8 @@ export const fileMetadata = async (req, res) => {
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
 
-      if (cachedData) {
-        console.log("Serving data from cache");
+      if ((cachedData || []).length > 0) {
+        console.log("Serving data from cache ", cacheKey);
         results = [...results, ...cachedData];
       } else {
         const dbData = await FileMetadataSchema.find({ orgId: cacheKey });
@@ -44,6 +44,7 @@ export const fileMetadata = async (req, res) => {
               expiry_date,
             });
             const files = await listGoogleDriveFiles(authClient);
+            console.log(files,"files")
             await FileMetadataSchema.insertMany(files);
             cache.set(cacheKey, files, 21600);
             results = [...results, ...files];
