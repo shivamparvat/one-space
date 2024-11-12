@@ -95,7 +95,7 @@ async def upload_file(file: UploadFile = File(...)):
             collection.insert_one(document)
 
         # Return a success message
-        return {"message": "File processed and added to MongoDB"}
+        return {"message": "File processed and added to MongoDB","success": True}
 
     except ValueError as ve:
         # Raise an HTTPException for any value-related errors
