@@ -14,12 +14,12 @@ export function authorizeGoogleDrive(token) {
   }
   
 
-export function listGoogleDriveFiles(auth) {
+export function listGoogleDriveFiles(auth,pageSize=10) {
   return new Promise((resolve, reject) => {
     const drive = google.drive({ version: "v3", auth });
     drive.files.list(
       {
-        pageSize: 100,
+        pageSize: pageSize,
         fields: "files(*)",
       },
       (err, res) => {
@@ -41,3 +41,25 @@ export function listGoogleDriveFiles(auth) {
 
 
 
+
+export async function loadGoogleDriveFile(auth, fileId) {
+  try {
+    const drive = google.drive({ version: 'v3', auth });
+
+    // Request to get the file content using its fileId
+    const file = await drive.files.get(
+      {
+        fileId: fileId,
+        alt: 'media',  
+      },
+      { responseType: 'stream' }  
+    );
+
+    // Return the file stream
+    return file.data;
+
+  } catch (err) {
+    console.error('Error downloading the file:', err);
+    throw new Error('Failed to download the file');
+  }
+}
