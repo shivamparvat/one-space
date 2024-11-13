@@ -1,16 +1,9 @@
 import { combineReducers } from "@reduxjs/toolkit";
-import loaderSlice from "./loader";
-import sidebarSlice from "./sidebar";
-import userLoginSlice from "./login";
-import rememberMeSlice from "./rememberMe";
-import recallApiSlice from "./RecallApi";
+import activitySlice from "./Activity";
+
 
 const rootReducer = combineReducers({
-  loader: loaderSlice,
-  sidebar: sidebarSlice,
-  login: userLoginSlice,
-  rememberme: rememberMeSlice,
-  recallApi: recallApiSlice
+  activity: activitySlice,
 });
 
 export default rootReducer;

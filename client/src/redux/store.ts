@@ -1,35 +1,35 @@
-import { Reducer, configureStore } from "@reduxjs/toolkit";
-import { persistReducer, persistStore } from "redux-persist";
-import { createWrapper } from "next-redux-wrapper";
-import storage from 'redux-persist/lib/storage'
-import rootReducer from "./reducer/rootReducer";
+import { configureStore } from '@reduxjs/toolkit';
+import {
+  TypedUseSelectorHook,
+  useDispatch as useAppDispatch,
+  useSelector as useAppSelector,
+} from 'react-redux';
+import rootReducer from '@/redux/reducer/rootReducer';
 
-const persistConfig = {
-    key: 'root',
-    storage,
-}
+// ----------------------------------------------------------------------
 
-const persistedReducer = persistReducer(persistConfig, rootReducer)
+// Define the root state type using the ReturnType utility of TypeScript
+export type RootState = ReturnType<typeof rootReducer>;
+
+// Define the type for dispatching actions from the store
+export type AppDispatch = typeof store.dispatch;
 
 const store = configureStore({
-    reducer: persistedReducer,
-    devTools: true,
-    middleware: (getDefaultMiddleware) => 
-        getDefaultMiddleware({
-            serializableCheck: {
-                ignoredActions: [
-                    'persist/PERSIST',
-                    'persist/REHYDRATE',
-                ],
-            },
-        }),
-})
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+      immutableCheck: false,
+    }),
+});
 
+// Extract the dispatch function from the store for convenience
+const { dispatch } = store;
 
+const useSelector: TypedUseSelectorHook<RootState> = useAppSelector;
 
+// Create a custom useDispatch hook with typed dispatch
+const useDispatch = () => useAppDispatch<AppDispatch>();
 
-export type AppDispatch = typeof store.dispatch
-export type RootState = ReturnType<typeof store.getState>
-export const wrapper = createWrapper(() => store)
-
-export default store
+// Export the Redux store, dispatch, useSelector, and useDispatch for use in components
+export { store, dispatch, useSelector, useDispatch };

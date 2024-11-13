@@ -1,19 +1,32 @@
 export const driveWebhook = async (req, res) => {
   try {
-    // Extract the resource ID from headers
     const resourceId = req.headers["x-goog-resource-id"];
-    console.log("Received change notification for resource ID:", resourceId);
     
-
-    // Fetch metadata using the resource ID
     if (resourceId) {
-      const fileMetadata = await getFileMetadata(drive,resourceId);
+      // Fetch latest metadata using the resource ID
+      const fileMetadata = await getFileMetadata(drive, resourceId);
       console.log("File metadata:", fileMetadata);
+
+      const previousMetadata = await getPreviousMetadata(resourceId);
+
+      if (
+        fileMetadata.name !== previousMetadata.name ||
+        fileMetadata.modifiedTime !== previousMetadata.modifiedTime ||
+        fileMetadata.size !== previousMetadata.size ||
+        fileMetadata.mimeType !== previousMetadata.mimeType ||
+        fileMetadata.permissions !== previousMetadata.permissions
+      ) {
+        console.log("File metadata has changed");
+
+      }
+
+      if (fileMetadata.md5Checksum !== previousMetadata.md5Checksum) {
+        const fileMetadata = await getFileMetadata(drive,resourceId);
+      }
     } else {
       console.log("Resource ID not found in headers");
     }
 
-    // Acknowledge receipt of the webhook notification
     res.status(200).send("Webhook received");
   } catch (error) {
     console.error("Error processing webhook:", error);

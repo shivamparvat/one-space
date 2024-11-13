@@ -140,3 +140,26 @@ export const fetchDetailedDropboxFileData = async (dbx) => {
     }
   });
 };
+
+
+
+
+export async function loadDropboxFile(dbx, filePath) {
+  try {
+
+    // Download the file content from Dropbox using its path
+    const response = await dbx.filesDownload({ path: filePath });
+
+    // The file content is available as a Blob, which can be converted to a stream
+    const fileBlob = response.result.fileBlob;
+
+    // Convert Blob to Readable Stream
+    const readableStream = fileBlob.stream();
+
+    return readableStream;
+
+  } catch (err) {
+    console.error('Error downloading the file from Dropbox:', err);
+    throw new Error('Failed to download the file');
+  }
+}
