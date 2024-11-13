@@ -1,8 +1,9 @@
-import { createEmbedding } from "../helper/Embedding";
-import { listGoogleDriveFiles } from "../helper/metaData/drive";
+import { createEmbedding } from "../helper/Embedding.js";
+import { listGoogleDriveFiles } from "../helper/metaData/drive.js";
+import AppToken from "../Schema/apptoken.js";
 
 export const Embedding = async (req, res) => {
-  initEmbedding();
+  initEmbedding(req, res);
 };
 
 async function initEmbedding(req, res) {
@@ -28,6 +29,7 @@ async function initEmbedding(req, res) {
 
         const files = await listGoogleDriveFiles(authClient);
         const totalFiles = (files || []).length;
+        console.log(totalFiles,"totalFiles")
 
         for (let index = 0; index < totalFiles; index++) {
           const file = files[index];

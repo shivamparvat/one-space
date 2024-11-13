@@ -1,5 +1,5 @@
 import axios from "axios";
-import { loadGoogleDriveFile } from "./metaData/drive";
+import { loadGoogleDriveFile } from "./metaData/drive.js";
 
 export async function createEmbedding(auth, fileId, metaData) {
   const RAG_URL = "http://localhost:8000/upload";
