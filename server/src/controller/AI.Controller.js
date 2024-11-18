@@ -1,10 +1,25 @@
 import { createEmbedding } from "../helper/Embedding.js";
 import { authorizeGoogleDrive, listGoogleDriveFiles } from "../helper/metaData/drive.js";
 import AppToken from "../Schema/apptoken.js";
+import AiQurey from "../helper/AiQurey.js"
 
 export const Embedding = async (req, res) => {
   initEmbedding(req, res);
 };
+
+
+export const AIsearch = async (req, res) => {
+  try {
+    const query = req?.query?.query
+    const result = await AiQurey(query)
+    res.status(200).json({result})
+  } catch (error) {
+    res
+    .status(500)
+    .json({ success: false, message: "search Error"+error });
+  }
+};
+
 
 async function initEmbedding(req, res) {
   const connectedApps = await AppToken.find();
@@ -83,3 +98,6 @@ async function initEmbedding(req, res) {
     .json({ success: false, message: "Embedding Error"+error });
   }
 }
+
+
+

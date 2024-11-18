@@ -141,12 +141,23 @@ async def rank_query(query: str):
         print(f"Top similarity scores: {[result['similarity_score'] for result in results]}")
         
         # Generate a prompt for ChatGPT
-        prompt = f"Answer the following question based on these documents. Pay special attention to the numbers, rates, and financial details:\n\nQuestion: {query}\n\n"
-        for i, result in enumerate(results, start=1):
-            prompt += f"Document {i}:\nContent: {result['content']}\n\n"
-        
-        prompt += "Provide a concise answer to the question based on the information above."
+        prompt = f"""
+        **Answer the following question based on these documents. Pay special attention to the numbers, rates, and financial details:**
 
+        ### Question: {query}
+
+        """
+        for i, result in enumerate(results, start=1):
+            prompt += f"""
+        ### Document {i}:
+        **Content:**
+        {result['content']}
+
+        """
+            
+        prompt += """
+        ### Provide a concise answer to the question based on the information above.
+        """
         # Get response from ChatGPT
         chat_response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
