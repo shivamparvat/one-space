@@ -10,7 +10,7 @@ export const googleLogin = (token: string | undefined) => async (dispatch: Dispa
 
     try {
         dispatch(setLoader(true))
-        const user = await axios.post(`${NEXT_PUBLIC_BASE_URL}/user/login`, {},
+        const user = await axios.post(`${NEXT_PUBLIC_BASE_URL}/api/v1/user/login`, {},
             {
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -19,7 +19,7 @@ export const googleLogin = (token: string | undefined) => async (dispatch: Dispa
             })
         dispatch(setLoader(false))
         if (user.status === 200 && user?.data?.success) {
-            dispatch(setToken(user?.data?.data))
+            dispatch(setToken(user?.data))
         }
     } catch (e) {
         dispatch(setLoader(false))
@@ -28,11 +28,11 @@ export const googleLogin = (token: string | undefined) => async (dispatch: Dispa
 }
 
 
-export const LoginWithCredential = (data: LogCredential) => async (dispatch: Dispatch) => {
+export const LoginWithCredential = (data:any) => async (dispatch: Dispatch) => {
 
     try {
         dispatch(setLoader(true))
-        const user = await axios.post(`${NEXT_PUBLIC_BASE_URL}/user/login`, {...data},
+        const user = await axios.post(`${NEXT_PUBLIC_BASE_URL}/api/v1/user/login`, {...data},
             {
                 headers: {
                     Accept: "application/json",

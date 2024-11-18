@@ -7,7 +7,8 @@ import MetaRouter from './Routes/Meta.routes.js';
 import AuthUrlRouter from './Routes/auth.URL.Routes.js';
 import webHooksRouter from './Routes/webhook.routes.js';
 import AIRouter from './Routes/AI.routes.js';
-import imageCache from './utiles/imageCache.js';
+import imageCache from './utils/imageCache.js';
+import userRouter from "./Routes/user.routes.js"
 // import { registerDriveWatch } from './events/driveEvents.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.use("/api/v1/token", TokenRouter)
 app.use("/api/v1/file", MetaRouter)
 app.use("/api/v1/webhook", webHooksRouter);
 app.use("/api/v1/ai", AIRouter)
+app.use("/api/v1/user", userRouter)
 
 
 // app.use('/api', googleDriveRoutes);

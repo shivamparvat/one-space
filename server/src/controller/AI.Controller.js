@@ -1,5 +1,5 @@
 import { createEmbedding } from "../helper/Embedding.js";
-import { listGoogleDriveFiles } from "../helper/metaData/drive.js";
+import { authorizeGoogleDrive, listGoogleDriveFiles } from "../helper/metaData/drive.js";
 import AppToken from "../Schema/apptoken.js";
 
 export const Embedding = async (req, res) => {
@@ -9,9 +9,9 @@ export const Embedding = async (req, res) => {
 async function initEmbedding(req, res) {
   const connectedApps = await AppToken.find();
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
+  // res.setHeader("Content-Type", "text/event-stream");
+  // res.setHeader("Cache-Control", "no-cache");
+  // res.setHeader("Connection", "keep-alive");
 
   try {
     for (const app of connectedApps) {
@@ -29,7 +29,7 @@ async function initEmbedding(req, res) {
 
         const files = await listGoogleDriveFiles(authClient);
         const totalFiles = (files || []).length;
-        console.log(totalFiles,"totalFiles")
+        // console.log(totalFiles,"totalFiles")
 
         for (let index = 0; index < totalFiles; index++) {
           const file = files[index];
@@ -41,17 +41,18 @@ async function initEmbedding(req, res) {
             file
           );
 
-          if (!embeddingResult.success) {
-            throw new Error(
-              `Failed to create embedding for file ID: ${fileId}`
-            );
-          }
+          // if (!embeddingResult.success) {
+          //   throw new Error(
+          //     `Failed to create embedding for file ID: ${fileId}`
+          //   );
+          // }
 
-          const progress = Math.round(((index + 1) / totalFiles) * 100);
+          // const progress = Math.round(((index + 1) / totalFiles) * 100);
 
-          res.write(
-            `data: ${JSON.stringify({ fileId, progress: `${progress}%` })}\n\n`
-          );
+          // res.write(
+          //   `data: ${JSON.stringify({ fileId, progress: `${progress}%` })}\n\n`
+          // );
+          res.status(200)
         }
       }
       else if(app?.state === "Dropbox"){
@@ -59,22 +60,26 @@ async function initEmbedding(req, res) {
       }
     }
 
-    res.write(
-      `data: ${JSON.stringify({
-        status: 200,
-        message: "All embeddings created successfully",
-        overallProgress: "100%",
-      })}\n\n`
-    );
+    // res.write(
+    //   `data: ${JSON.stringify({
+    //     status: 200,
+    //     message: "All embeddings created successfully",
+    //     overallProgress: "100%",
+    //   })}\n\n`
+    // );
 
-    res.end();
+    res.status(200)
+    // res.end();
   } catch (error) {
-    res.write(
-      `data: ${JSON.stringify({
-        status: 500,
-        message: error.message || "An error occurred while creating embeddings",
-      })}\n\n`
-    );
-    res.end();
+    // res.write(
+    //   `data: ${JSON.stringify({
+    //     status: 500,
+    //     message: error.message || "An error occurred while creating embeddings",
+    //   })}\n\n`
+    // );
+    // res.end();
+    res
+    .status(500)
+    .json({ success: false, message: "Embedding Error"+error });
   }
 }

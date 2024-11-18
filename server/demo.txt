@@ -1,0 +1,19 @@
+Section 1: General Knowledge
+- The Eiffel Tower is located in Paris, France.
+- Python is a popular programming language used for data science, web development, automation, and artificial intelligence.
+
+Section 2: Historical Facts
+- The Great Wall of China was built over several dynasties to protect against invasions.
+- Leonardo da Vinci painted the Mona Lisa, which is currently housed in the Louvre Museum.
+
+Section 3: Scientific Facts
+- Water freezes at 0°C and boils at 100°C at sea level.
+- The speed of light is approximately 299,792,458 meters per second in a vacuum.
+
+shivam birthday is 27/11/2000 
+
+Section 4: Fun Facts
+- Honey never spoils; it has an indefinite shelf life.
+- Bananas are berries, but strawberries are not.
+
+End of File. Good luck with your RAG system testing!

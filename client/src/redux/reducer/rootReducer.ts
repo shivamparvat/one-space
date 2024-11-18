@@ -1,9 +1,13 @@
 import { combineReducers } from "@reduxjs/toolkit";
-import activitySlice from "./Activity";
+import loader from "@/redux/reducer/loader";
+import recall from "@/redux/reducer/RecallApi";
+import login from "@/redux/reducer/login";
 
 
 const rootReducer = combineReducers({
-  activity: activitySlice,
+  loader,
+  recall,
+  login
 });
 
 export default rootReducer;

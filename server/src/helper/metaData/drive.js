@@ -42,40 +42,85 @@ export function listGoogleDriveFiles(auth,pageSize=1) {
 
 
 
+
 export async function loadGoogleDriveFile(auth, fileId, mimeType = 'application/pdf') {
   try {
     const drive = google.drive({ version: 'v3', auth });
 
-    // Get file metadata to check its MIME type
+    // Get file metadata to check its MIME type and name
     const fileMetadata = await drive.files.get({
       fileId: fileId,
-      fields: 'mimeType',
+      fields: 'mimeType, name',
     });
 
     const fileMimeType = fileMetadata.data.mimeType;
+    const fileName = fileMetadata.data.name;
 
     if (fileMimeType.includes('application/vnd.google-apps')) {
-      // For Google Docs/Sheets/Slides, export instead of downloading
-      const exportedFile = await drive.files.export(
-        {
-          fileId: fileId,
-          mimeType: mimeType, // Specify the format you want, e.g., PDF or DOCX
-        },
-        { responseType: 'stream' }
-      );
-
-      return exportedFile.data; // Return the file stream
+      // Handle Google Docs, Sheets, and Slides
+      if (fileMimeType === 'application/vnd.google-apps.document') {
+        // Export Google Docs to PDF (or any other format)
+        const exportedFile = await drive.files.export(
+          {
+            fileId: fileId,
+            mimeType: mimeType, // e.g., 'application/pdf' or 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          },
+          { responseType: 'arraybuffer' }
+        );
+        return {
+          data: Buffer.from(exportedFile.data), // Convert exported file to binary
+          name: fileName,
+          mimeType: mimeType,  // The requested mime type (e.g., PDF)
+          metadata: fileMetadata.data,
+        };
+      } else if (fileMimeType === 'application/vnd.google-apps.presentation') {
+        // Export Google Slides to PDF
+        const exportedFile = await drive.files.export(
+          {
+            fileId: fileId,
+            mimeType: mimeType, // e.g., 'application/pdf' for PDF
+          },
+          { responseType: 'arraybuffer' }
+        );
+        return {
+          data: Buffer.from(exportedFile.data),
+          name: fileName,
+          mimeType: mimeType,
+          metadata: fileMetadata.data,
+        };
+      } else if (fileMimeType === 'application/vnd.google-apps.spreadsheet') {
+        // Export Google Sheets to a desired format (e.g., PDF, XLSX, etc.)
+        const exportedFile = await drive.files.export(
+          {
+            fileId: fileId,
+            mimeType: mimeType, // e.g., 'application/pdf', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          },
+          { responseType: 'arraybuffer' }
+        );
+        return {
+          data: Buffer.from(exportedFile.data),
+          name: fileName,
+          mimeType: mimeType,
+          metadata: fileMetadata.data,
+        };
+      } else {
+        throw new Error(`Unsupported Google Drive file type: ${fileMimeType}`);
+      }
     } else {
-      // For other files, download directly
+      // For non-Google files (e.g., PDFs, images, etc.), download directly
       const file = await drive.files.get(
         {
           fileId: fileId,
           alt: 'media',
         },
-        { responseType: 'stream' }
+        { responseType: 'arraybuffer' }
       );
-
-      return file.data;
+      return {
+        data: Buffer.from(file.data),
+        name: fileName,
+        mimeType: fileMimeType,
+        metadata: fileMetadata.data,
+      };
     }
   } catch (err) {
     console.error('Error downloading or exporting the file:', err);

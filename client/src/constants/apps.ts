@@ -26,7 +26,7 @@ export const oauthUrls = {
             redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
             response_type: "code",                // Use "token" for Implicit flow,
             state: "Google Drive",
-            scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly", // Scope for Google Drive
+            scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.readonly", // Scope for Google Drive
             access_type: "offline"
         },
     },
