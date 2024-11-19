@@ -14,6 +14,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
 import axios from "axios"
 import {DataTable} from "./components/table"
+import RagOutput from "./components/RagOutput"
 // import { salesData, overviewChartData } from "@/constants/dummyData"
 interface FileMetadata {
   Name: string;
@@ -58,7 +59,7 @@ export default function Page() {
         <div className="flex-col items-center justify-between space-y-2 md:flex md:flex-row">
           <h2 className="text-3xl font-bold tracking-tight">Access Control</h2>
         </div>
-
+        <RagOutput/>
         <DataTable data={files || []} />
       </div>
     </div>
