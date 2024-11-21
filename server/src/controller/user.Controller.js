@@ -67,8 +67,8 @@ export const login = async (req, res) => {
           // Register new user for Google login
           const newUser = new User({
             email,
-            first_name: name || "",
-            last_name: "",
+            first_name: first_name || "",
+            last_name: last_name || "",
             image: picture || ""
           });
           findUser = await newUser.save();
