@@ -5,17 +5,20 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {signIn} from "next-auth/react";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import Image from "next/image";
 import googleIcon from "@/asset/icon/google-icon-logo-svgrepo-com.svg"
 import {GoogleLogin} from "@react-oauth/google";
 import {googleLogin} from "@/redux/actions/login";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {AnyAction} from "redux";
+import { RootState } from "@/redux/store";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
     const [loading, setLoading] = useState(false);
-
+    const token = useSelector((state: RootState) => state.login.userToken);
+    const router = useRouter();
     const dispatch = useDispatch()
 
     const handleGoogleLogin = async () => {
@@ -28,7 +31,13 @@ export default function LoginPage() {
             setLoading(false);
         }
     };
-
+    
+    useEffect(() => {
+        if(token){
+            router.push("/dashboard")
+        }
+    }, [token])
+    
     const getGoogleData = async (token: string | undefined) => {
         dispatch(googleLogin(token) as unknown as AnyAction);
     };

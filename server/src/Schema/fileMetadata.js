@@ -1,9 +1,30 @@
 // Schema/fileMetadata.js
 import mongoose from "mongoose";
 
-const FileMetadataSchema = new mongoose.Schema({
-  orgId: String, // Identifier for the service (e.g., "Google Drive", "Dropbox")
-  data: mongoose.Schema.Types.Mixed, // Store any structure here
-}, { timestamps: true });
+// Define the schema for file metadata
+const FileMetadataSchema = new mongoose.Schema(
+  {
+    // orgId: {
+    //   type: mongoose.Schema.Types.ObjectId, // Reference to the organization
+    //   ref: 'Organization', // Optional: If you're referencing an Organization model
+    //   required: true, // Ensure this field is provided
+    // },
+    data: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+    is_embedded: {
+      type: Boolean,
+      default: false
+    },
+    is_embedded: {
+      type: Boolean,
+      default: false
+    },
+  },
+  { timestamps: true } // Automatically manage createdAt and updatedAt fields
+);
 
-export default mongoose.model("FileMetadata", FileMetadataSchema);
+// Create and export the model based on the schema
+const Filedata = mongoose.model("Filedata", FileMetadataSchema);
+
+export default Filedata;

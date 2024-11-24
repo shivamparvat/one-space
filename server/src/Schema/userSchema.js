@@ -24,6 +24,10 @@ const userSchema = new Schema(
       default: "user",
       enum: ["user", "admin"]
     },
+    organization:{
+        type: Schema.Types.ObjectId,
+        ref: "Organization",
+    },
     image: { type: String },
     address: {
       type: String

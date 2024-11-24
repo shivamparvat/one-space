@@ -1,5 +1,5 @@
 import AppToken from "../Schema/apptoken.js";
-import FileMetadataSchema from "../Schema/fileMetadata.js";
+import Filedata from "../Schema/fileMetadata.js";
 import cache from "../redis/cache.js";
 import {
   authorizeGoogleDrive,
@@ -25,11 +25,11 @@ export const fileMetadata = async (req, res) => {
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
 
-      if ((cachedData || []).length > 0) {
+      if (!(cachedData || []).length > 0) {
         console.log("Serving data from cache ", cacheKey);
         results = [...results, ...cachedData];
       } else {
-        const dbData = await FileMetadataSchema.find({ orgId: cacheKey });
+        const dbData = await Filedata.find({ orgId: cacheKey });
         if (dbData.length > 0) {
           console.log("Serving data from MongoDB");
           results = [...results, ...dbData];
@@ -44,8 +44,14 @@ export const fileMetadata = async (req, res) => {
               expiry_date,
             });
             const files = await listGoogleDriveFiles(authClient);
-            console.log(files,"files")
-            await FileMetadataSchema.insertMany(files);
+            // console.log(files,"files files files")
+            const fileDataToInsert = files.map(file => {
+              return {
+                data:file
+              };
+            });
+            const resdb = await Filedata.insertMany(fileDataToInsert);
+            console.log(resdb,"DB res")
             cache.set(cacheKey, files, 21600);
             results = [...results, ...files];
           } else if (app?.state == "Dropbox") {
@@ -59,7 +65,13 @@ export const fileMetadata = async (req, res) => {
             });
 
             const files = await fetchDetailedDropboxFileData(dbx);
-            await FileMetadataSchema.insertMany(files);
+
+            const fileDataToInsert = files.map(file => {
+              return {
+                data:file
+              };
+            });
+            await Filedata.insertMany(fileDataToInsert);
             cache.set(cacheKey, files, 21600);
             results = [...results, ...files];
           }

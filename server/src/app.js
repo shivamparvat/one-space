@@ -9,6 +9,7 @@ import webHooksRouter from './Routes/webhook.routes.js';
 import AIRouter from './Routes/AI.routes.js';
 import imageCache from './utils/imageCache.js';
 import userRouter from "./Routes/user.routes.js"
+import orgRouter from "./Routes/org.routes.js"
 // import { registerDriveWatch } from './events/driveEvents.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.use("/api/v1/auth/url", AuthUrlRouter)
 app.use("/api/v1/token", TokenRouter)
 app.use("/api/v1/file", MetaRouter)
 app.use("/api/v1/webhook", webHooksRouter);
+app.use("/api/v1/org", orgRouter);
 app.use("/api/v1/ai", AIRouter)
 app.use("/api/v1/user", userRouter)
 

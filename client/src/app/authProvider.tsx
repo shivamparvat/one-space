@@ -37,20 +37,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     }
 
     // Set authentication status
-    if (storedToken) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-      router.push('/login');
-    }
+    // if (storedToken) {
+    //   setIsAuthenticated(true);
+    // } else {
+    //   setIsAuthenticated(false);
+    //   router.push('/login');
+    // }
   }, [token, dispatch, router]);
 
 
-  if (!isAuthenticated) {
-    router.replace("/login")
-  } else {
-    router.replace("/dashboard")
-  }
+  // if (!isAuthenticated) {
+  //   router.replace("/login")
+  // } else {
+  //   router.replace("/dashboard")
+  // }
 
   return (
     <AuthContext.Provider value={{isAuthenticated, token}}>
