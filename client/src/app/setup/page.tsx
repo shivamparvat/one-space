@@ -11,6 +11,7 @@ const SetupPage = () => {
   const router = useRouter();
   const [progress, setProgress] = useState(0); // Adjust progress percentage as needed
   const [activeTab, setActiveTab] = useState("organization-details");
+  
 
   const handleLogout = () => {
     // Add logout logic here

@@ -12,68 +12,108 @@ import {
 
 export const fileMetadata = async (req, res) => {
   try {
-    const connectedApps = await AppToken.find(); // Fetch all connected apps from MongoDB
-
     let results = [];
 
+    const user = req.user
+    const organization = user?.organization
+
+
+    if(!organization) return   res
+    .status(403)
+    .json({ success: false, message: "organization id missing" });
+
+    const user_id = user?._id
+    const searchQuery = req.query.search || ""; 
+    const searchFilter = searchQuery
+      ? {
+          $text: { $search: searchQuery },
+        }
+      : {};
+
+      const page = parseInt(req.query.page, 10) || 1; 
+      const limit = parseInt(req.query.limit, 10) || 10;
+      const skip = (page - 1) * limit;
+
+      const connectedApps = await AppToken.find();
     for (const app of connectedApps) {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
 
-      const cacheKey = `orgId_${app?.state}`;
-
+      const mainCache = `${user_id}_${organization}_${app?.state}`;
+      const cacheKey = searchQuery ? `${user_id}_${organization}_${app?.state}_${searchQuery}`: mainCache
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
 
-      if (!(cachedData || []).length > 0) {
-        console.log("Serving data from cache ", cacheKey);
+      if ((cachedData || []).length > 0) {
+        console.log("cache data")
         results = [...results, ...cachedData];
       } else {
-        const dbData = await Filedata.find({ orgId: cacheKey });
+
+        const dbData = await Filedata.find({ organization,user_id, ...searchFilter })
+          .skip(skip)
+          .limit(limit);
+          console.log(dbData.length,"dbDatadbData")
         if (dbData.length > 0) {
-          console.log("Serving data from MongoDB");
           results = [...results, ...dbData];
-          cache.set(cacheKey, dbData, 21600);
+          searchQuery?
+          cache.set(cacheKey, dbData, 21600):
+          cache.set(cacheKey, dbData, 100)
         } else {
-          if (app?.state == "Google Drive") {
-            const authClient = await authorizeGoogleDrive({
-              access_token,
-              refresh_token,
-              scope,
-              token_type,
-              expiry_date,
-            });
-            const files = await listGoogleDriveFiles(authClient);
-            // console.log(files,"files files files")
-            const fileDataToInsert = files.map(file => {
-              return {
-                data:file
-              };
-            });
-            const resdb = await Filedata.insertMany(fileDataToInsert);
-            console.log(resdb,"DB res")
-            cache.set(cacheKey, files, 21600);
-            results = [...results, ...files];
-          } else if (app?.state == "Dropbox") {
-            const { dbx } = await initializeDropbox({
-              accessToken: access_token,
-              refreshToken: refresh_token,
-              clientId: process.env.DROPBOX_CLIENT_ID,
-              clientSecret: process.env.DROPBOX_CLIENT_SECRET,
-              expiryDate: expiry_date,
-              scope,
-            });
-
-            const files = await fetchDetailedDropboxFileData(dbx);
-
-            const fileDataToInsert = files.map(file => {
-              return {
-                data:file
-              };
-            });
-            await Filedata.insertMany(fileDataToInsert);
-            cache.set(cacheKey, files, 21600);
-            results = [...results, ...files];
+          if(!searchQuery){
+            if (app?.state == "Google Drive") {
+              const authClient = await authorizeGoogleDrive({
+                access_token,
+                refresh_token,
+                scope,
+                token_type,
+                expiry_date,
+              });
+              const files = await listGoogleDriveFiles(authClient);
+              // console.log(files,"files files files")
+              const fileDataToInsert = files.map(file => {
+                return {
+                  user_id,
+                  organization,
+                  data:file
+                };
+              });
+              const resdb = await Filedata.insertMany(fileDataToInsert);
+              
+              searchQuery?
+              cache.set(cacheKey, files, 21600):
+              cache.set(cacheKey, files, 100)
+  
+  
+              results = [...results, ...files];
+  
+            } else if (app?.state == "Dropbox") {
+              const { dbx } = await initializeDropbox({
+                accessToken: access_token,
+                refreshToken: refresh_token,
+                clientId: process.env.DROPBOX_CLIENT_ID,
+                clientSecret: process.env.DROPBOX_CLIENT_SECRET,
+                expiryDate: expiry_date,
+                scope,
+              });
+  
+              const files = await fetchDetailedDropboxFileData(dbx);
+  
+              const fileDataToInsert = files.map(file => {
+                return {
+                  user_id,
+                  organization,
+                  data:file
+                };
+              });
+              await Filedata.insertMany(fileDataToInsert);
+  
+              searchQuery?
+              cache.set(cacheKey, files, 21600):
+              cache.set(cacheKey, files, 100)
+  
+  
+              results = [...results, ...files];
+            }
           }
         }
       }

@@ -25,7 +25,7 @@ export const compareHash = async (plainPassword, hashedPassword) => {
  */
 export const signJwt = (
   payload,
-  options = { expiresIn: "1h" },
+  options = { expiresIn: "24h" },
   secret = process.env.JWT_SECRET,
 ) => {
   return new Promise((resolve, reject) => {

@@ -7,8 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import axios from 'axios';
 import { FC, useState } from 'react';
 
-const RagOutput: FC = () => {
-  const [query, setQuery] = useState('');
+const RagOutput: FC<{query:string,setQuery: React.Dispatch<string>}> = ({query,setQuery}) => {
   const [data, setData] = useState<{
     query: string;
     answer: string;
@@ -32,22 +31,8 @@ const RagOutput: FC = () => {
     }
   };
 
-  console.log(data,"agreementagreementagreement")
   return (
     <div className="space-y-4">
-      <div className="flex space-x-2">
-        <Input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Enter your query..."
-          className="flex-grow"
-        />
-        <Button onClick={handleSearch} disabled={loading}>
-          {loading ? 'Searching...' : 'Search'}
-        </Button>
-      </div>
-
       {data && (
         <Card>
           <CardHeader>

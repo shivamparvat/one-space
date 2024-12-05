@@ -4,7 +4,7 @@ import React, {useEffect, useState} from "react"
 
 import {Avatar, AvatarFallback} from "@radix-ui/react-avatar"
 // import initials from "initials"
-import {DollarSign, Users, CreditCard, Activity} from "lucide-react"
+import {DollarSign, Users, CreditCard, Activity, Bold, Turtle} from "lucide-react"
 import {DateRange} from "react-day-picker"
 // import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 
@@ -15,6 +15,10 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
 import axios from "axios"
 import {DataTable} from "./components/table"
 import RagOutput from "./components/RagOutput"
+import { useSelector, useStore } from "react-redux"
+import { RootState } from "@/redux/store"
+import { Input } from "@/components/ui/input"
+import { Toggle } from "@/components/ui/toggle"
 // import { salesData, overviewChartData } from "@/constants/dummyData"
 interface FileMetadata {
   Name: string;
@@ -32,15 +36,25 @@ interface FileMetadata {
 
 export default function Page() {
   const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>(undefined)
-
-  const [files, setFiles] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [files, setFiles] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const token = useSelector((state: RootState) => state.login.userToken);
+  const [aiToggle, setAiToggle] = useState(false)
 
-  useEffect(() => {
+  console.table({
+    headers: {
+      Authorization: `Bearer ${token?.token}`,
+    }})
+    
     const fetchFiles = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/v1/file/list');
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/list?search=${aiToggle?"":searchQuery}`,{}, {
+          headers: {
+            Authorization: `Bearer ${token?.token}`,
+          },
+        });
         setFiles((response.data?.data || [])); 
        } catch (err) {
         setError('Failed to fetch files');
@@ -50,8 +64,10 @@ export default function Page() {
       }
     };
 
+  useEffect(() => {
+
     fetchFiles();
-  }, []);
+  }, [token,searchQuery,aiToggle]);
 
   return (
     <div className="flex-col md:flex">
@@ -59,8 +75,25 @@ export default function Page() {
         <div className="flex-col items-center justify-between space-y-2 md:flex md:flex-row">
           <h2 className="text-3xl font-bold tracking-tight">Access Control</h2>
         </div>
-        <RagOutput/>
-        <DataTable data={files || []} />
+
+        <div className="flex space-x-2">
+       <Input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Enter your query..."
+          className="flex-grow"
+        />
+       <Button onClick={()=>{}} disabled={loading}>
+         {loading ? 'Searching...' : 'Search'}
+       </Button>
+       <Toggle onPressedChange={()=>setAiToggle(pre=>!pre)} pressed={aiToggle} variant="outline" aria-label="Toggle italic" >
+        AI
+      </Toggle>
+     </div>
+        
+        <RagOutput query={searchQuery} setQuery={setSearchQuery}/>
+        <DataTable data={files?.data || []} />
       </div>
     </div>
   )
