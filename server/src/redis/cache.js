@@ -1,8 +1,13 @@
-import redis from "redis";
+import { createClient } from 'redis';
 
 // Initialize Redis client
-const client = redis.createClient({
-  url: "redis://localhost:6379" // Adjust URL and port as needed
+const client = createClient({
+  username: 'default',
+  password: 'JCCzzIKeUmmwQFUrXKgf0JlMknD6bj8D',
+  socket: {
+      host: 'redis-19548.c212.ap-south-1-1.ec2.redns.redis-cloud.com',
+      port: 19548
+  }
 });
 
 // Connect to Redis

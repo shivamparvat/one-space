@@ -249,9 +249,9 @@ export const columns: ColumnDef<any>[] = [
     // accessorKey: "doc",
     header: "Name",
     cell: ({row}) => {
-      const name: string = row.original?.name as string;
-      const iconLink: string = row.original?.iconLink as string;
-      const webViewLink: string = row.original?.webViewLink as string;
+      const name: string = row.original?.data?.name as string;
+      const iconLink: string = row.original?.data?.iconLink as string;
+      const webViewLink: string = row.original?.data?.webViewLink as string;
 
       return (
         <a href={webViewLink} target="_blank"><div className="flex items-center space-x-2">
@@ -273,7 +273,7 @@ export const columns: ColumnDef<any>[] = [
     accessorKey: "owners",
     header: "owners",
     cell: ({row}) => {
-      const userArray: any[] = (row.getValue("owners") || []);
+      const userArray: any[] = (row.original?.data?.owners || []);
       const user = userArray[0]
       return (
         <div className="flex items-center space-x-2">
@@ -294,7 +294,7 @@ export const columns: ColumnDef<any>[] = [
     accessorKey: "lastModifyingUser",
     header: "Last Modify",
     cell: ({row}) => {
-      const user: any = row.getValue("lastModifyingUser");
+      const user: any = row.original?.data?.lastModifyingUser;
       return (
         <div className="flex items-center space-x-2">
           {user?.photoLink && (
@@ -314,7 +314,7 @@ export const columns: ColumnDef<any>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({row}) => {
-      const Filedata = row.original
+      const Filedata = row.original?.data
 
 
       // {

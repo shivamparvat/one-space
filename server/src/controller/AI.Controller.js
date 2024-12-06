@@ -10,7 +10,7 @@ export const Embedding = async (req, res) => {
 
 export const AIsearch = async (req, res) => {
   try {
-    const query = req?.query?.query
+    const query = req?.query?.searchQuery
     const result = await AiQurey(query)
     res.status(200).json({result})
   } catch (error) {

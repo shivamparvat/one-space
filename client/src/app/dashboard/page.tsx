@@ -33,20 +33,22 @@ interface FileMetadata {
   ExternalUsers: number | null;
 }
 
+export interface RagOutputType {
+  query: string;
+  answer: string;
+  results: string[];
+}
 
 export default function Page() {
   const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState("");
+  const [data, setData] = useState<RagOutputType| null>(null);
   const [files, setFiles] = useState<any>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const token = useSelector((state: RootState) => state.login.userToken);
   const [aiToggle, setAiToggle] = useState(false)
 
-  console.table({
-    headers: {
-      Authorization: `Bearer ${token?.token}`,
-    }})
     
     const fetchFiles = async () => {
       try {
@@ -56,7 +58,7 @@ export default function Page() {
           },
         });
         setFiles((response.data?.data || [])); 
-       } catch (err) {
+      } catch (err) {
         setError('Failed to fetch files');
         console.error(err);
       } finally {
@@ -64,10 +66,35 @@ export default function Page() {
       }
     };
 
-  useEffect(() => {
+  const AiSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setLoading(true);
+    try {
+      const response = await axios.get(process.env.NEXT_PUBLIC_BASE_URL+`/api/v1/ai/search`, {
+        params: { searchQuery },
+      });
+      setData(response?.data?.result);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  function onSearch(){
+    if(aiToggle){
+      AiSearch()
+    }
+    fetchFiles()
+  }
+
+
+  useEffect(() => {
     fetchFiles();
-  }, [token,searchQuery,aiToggle]);
+  }, [token]);
+
+
 
   return (
     <div className="flex-col md:flex">
@@ -84,7 +111,7 @@ export default function Page() {
           placeholder="Enter your query..."
           className="flex-grow"
         />
-       <Button onClick={()=>{}} disabled={loading}>
+       <Button onClick={()=>{onSearch()}} disabled={loading}>
          {loading ? 'Searching...' : 'Search'}
        </Button>
        <Toggle onPressedChange={()=>setAiToggle(pre=>!pre)} pressed={aiToggle} variant="outline" aria-label="Toggle italic" >
@@ -92,8 +119,8 @@ export default function Page() {
       </Toggle>
      </div>
         
-        <RagOutput query={searchQuery} setQuery={setSearchQuery}/>
-        <DataTable data={files?.data || []} />
+        <RagOutput query={searchQuery} setQuery={setSearchQuery} data={data} setData={setData}/>
+        <DataTable data={files|| []} />
       </div>
     </div>
   )

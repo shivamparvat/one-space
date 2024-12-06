@@ -18,7 +18,7 @@ export const fileMetadata = async (req, res) => {
     const organization = user?.organization
 
 
-    if(!organization) return   res
+    if(!organization) return  res
     .status(403)
     .json({ success: false, message: "organization id missing" });
 
@@ -45,14 +45,12 @@ export const fileMetadata = async (req, res) => {
       let cachedData = await cache.get(cacheKey);
 
       if ((cachedData || []).length > 0) {
-        console.log("cache data")
         results = [...results, ...cachedData];
       } else {
 
         const dbData = await Filedata.find({ organization,user_id, ...searchFilter })
           .skip(skip)
           .limit(limit);
-          console.log(dbData.length,"dbDatadbData")
         if (dbData.length > 0) {
           results = [...results, ...dbData];
           searchQuery?
@@ -69,9 +67,9 @@ export const fileMetadata = async (req, res) => {
                 expiry_date,
               });
               const files = await listGoogleDriveFiles(authClient);
-              // console.log(files,"files files files")
               const fileDataToInsert = files.map(file => {
                 return {
+                  doc_id:file.id,
                   user_id,
                   organization,
                   data:file
@@ -100,6 +98,7 @@ export const fileMetadata = async (req, res) => {
   
               const fileDataToInsert = files.map(file => {
                 return {
+                  doc_id:file.id,
                   user_id,
                   organization,
                   data:file
