@@ -42,6 +42,7 @@ const cache = {
    */
   async get(key) {
     try {
+      console.log(`get cache for key: ${key}`);
       const value = await client.get(key);
       return value ? JSON.parse(value) : null;
     } catch (err) {

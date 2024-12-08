@@ -74,8 +74,8 @@ export default function Page() {
         params: { searchQuery },
       });
       setData(response?.data?.result);
+      setFiles((response.data?.result?.results || [])); 
     } catch (error) {
-      console.error('Error fetching data:', error);
       setData(null);
     } finally {
       setLoading(false);
@@ -83,7 +83,9 @@ export default function Page() {
   };
 
   function onSearch(){
-    if(aiToggle){
+    setData(null)
+    setFiles([])
+    if(aiToggle && searchQuery){
       AiSearch()
     }
     fetchFiles()

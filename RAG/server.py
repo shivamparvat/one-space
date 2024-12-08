@@ -33,7 +33,7 @@ app = FastAPI()
 # MongoDB connection
 mongo_client = MongoClient(os.getenv("MONGODB_URI"))
 db = mongo_client["onespace"]
-collection = db["embeddings"]
+collection = db["filedatas"]
 
 # LangChain embedding model setup
 embedding_model = OpenAIEmbeddings()
@@ -444,6 +444,8 @@ async def upload_file(
     metadata: Optional[str] = Form(None)
 ):
     try:
+        metadata_dict = json.loads(metadata)
+        document_id = metadata_dict["id"]
         # Initialize the AgenticChunker
         agentic_chunker = AgenticChunker(openai_api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -463,24 +465,36 @@ async def upload_file(
         agentic_chunker.pretty_print_chunks()
 
         # Store chunks into MongoDB
+        new_chunks = []
         for chunk_id, chunk in agentic_chunker.get_chunks().items():
-            document = {
-                "filename": file_metadata["name"],
+            new_chunks.append({
+                "filename": file_metadata.get("name", file.filename),
                 "chunk_id": chunk_id,
-                "title": chunk['title'],
-                "summary": chunk['summary'],
-                "propositions": chunk['propositions'],
-                "embedding": chunk['embedding'],
-                "metadata": file_metadata,
-            }
-            collection.insert_one(document)
+                "title": chunk["title"],
+                "summary": chunk["summary"],
+                "propositions": chunk["propositions"],
+                "embedding": chunk["embedding"],
+            })
 
-        # Return a success message along with chunk overview
-        return {
-            "message": "File processed and added to MongoDB",
-            "success": True,
-            "chunk_outline": agentic_chunker.get_chunk_outline(),
-        }
+        # Update existing document in MongoDB
+        result = collection.update_one(
+            {"doc_id": document_id},  # Filter by document_id
+            {
+                "$push": {"chunks": {"$each": new_chunks}},  # Append new chunks to an existing array
+                "$set": {
+                    "filename": file_metadata.get("name", file.filename),  # Update filename
+                }
+            },
+            upsert=True  # Insert document if it doesn't exist
+        )
+        if(result):
+            # Return a success message along with chunk overview
+            return {
+                "message": "File processed and added to MongoDB",
+                "success": True,
+                "chunk_outline": agentic_chunker.get_chunk_outline(),
+            }
+        
 
     except ValueError as ve:
         # Raise an HTTPException for any value-related errors
@@ -497,26 +511,32 @@ async def rank_query(query: str):
         # Generate embedding for the query using OpenAI embeddings
         query_embedding = openai.Embedding.create(input=query, model="text-embedding-ada-002")['data'][0]['embedding']
         
-        # Perform similarity search in MongoDB by cosine similarity
+        # Perform similarity search for chunks in MongoDB by cosine similarity
         results = []
+        
+        # Iterate over documents in MongoDB
         for doc in collection.find():
-            # Assuming the embedding in MongoDB is stored as a list
-            embedding = np.array(doc["embedding"])
+            filename = doc.get("filename")
+            chunks = doc.get("chunks", [])
             
-            # Calculate cosine similarity between query and document embedding
-            similarity_score = np.dot(query_embedding, embedding) / (norm(query_embedding) * norm(embedding))
-            
-            # Append document data with similarity score to results
-            results.append({
-                "filename": doc["filename"],
-                "chunk_id": doc["chunk_id"],
-                "title": doc["title"],
-                "summary": doc["summary"],
-                "propositions": doc["propositions"],
-                "embedding": doc["embedding"],
-                "metadata": doc["metadata"],
-                "similarity_score": similarity_score,
-            })
+            # Iterate over each chunk in the document
+            for chunk in chunks:
+                # Extract chunk embedding (assuming chunk embedding is stored in MongoDB)
+                embedding = np.array(chunk["embedding"])
+                
+                # Calculate cosine similarity between query and chunk embedding
+                similarity_score = np.dot(query_embedding, embedding) / (norm(query_embedding) * norm(embedding))
+                
+                # Append chunk data with similarity score to results
+                results.append({
+                    "filename": filename,
+                    "chunk_id": chunk.get("chunk_id"),
+                    "title": chunk.get("title"),
+                    "summary": chunk.get("summary"),
+                    "propositions": chunk.get("propositions"),
+                    "data": doc.get("data"),
+                    "similarity_score": similarity_score,
+                })
         
         # Sort results by similarity score in descending order and return top results
         results = sorted(results, key=lambda x: x["similarity_score"], reverse=True)[:5]
@@ -529,17 +549,16 @@ async def rank_query(query: str):
         **Answer the following question based on these documents. Pay special attention to the numbers, rates, and financial details:**
 
         ### Question: {query}
-
         """
         
-        # Add document content to the prompt
+        # Add chunk content to the prompt
         for i, result in enumerate(results, start=1):
             prompt += f"""
         ### Document {i}:
+        **Filename:** {result['filename']}
         **Title:** {result['title']}
         **Summary:** {result['summary']}
         **Propositions:** {result['propositions']}
-
         """
             
         prompt += """
@@ -562,5 +581,7 @@ async def rank_query(query: str):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

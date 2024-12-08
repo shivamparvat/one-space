@@ -50,7 +50,7 @@ export async function loadGoogleDriveFile(auth, fileId, mimeType = 'application/
     // Get file metadata to check its MIME type and name
     const fileMetadata = await drive.files.get({
       fileId: fileId,
-      fields: 'mimeType, name',
+      fields: 'mimeType, name, id',
     });
 
     const fileMimeType = fileMetadata.data.mimeType;

@@ -1,5 +1,7 @@
 import AppToken from "../Schema/apptoken.js";
-import Filedata from "../Schema/fileMetadata.js";
+import Filedata from "../Schema/fileMetadata.js"; 
+import Search from "../Schema/searchSchema.js"; 
+
 import cache from "../redis/cache.js";
 import {
   authorizeGoogleDrive,
@@ -13,10 +15,8 @@ import {
 export const fileMetadata = async (req, res) => {
   try {
     let results = [];
-
     const user = req.user
     const organization = user?.organization
-
 
     if(!organization) return  res
     .status(403)
@@ -39,12 +39,13 @@ export const fileMetadata = async (req, res) => {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
 
-      const mainCache = `${user_id}_${organization}_${app?.state}`;
-      const cacheKey = searchQuery ? `${user_id}_${organization}_${app?.state}_${searchQuery}`: mainCache
+      const mainCache = `${user_id}_${organization}`;
+      const cacheKey = searchQuery ? `${user_id}_${organization}_${searchQuery}`: mainCache
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
 
       if ((cachedData || []).length > 0) {
+        console.log("cache data")
         results = [...results, ...cachedData];
       } else {
 
@@ -52,6 +53,7 @@ export const fileMetadata = async (req, res) => {
           .skip(skip)
           .limit(limit);
         if (dbData.length > 0) {
+          console.log("data from databse")
           results = [...results, ...dbData];
           searchQuery?
           cache.set(cacheKey, dbData, 21600):
@@ -59,6 +61,7 @@ export const fileMetadata = async (req, res) => {
         } else {
           if(!searchQuery){
             if (app?.state == "Google Drive") {
+              console.log("google")
               const authClient = await authorizeGoogleDrive({
                 access_token,
                 refresh_token,
@@ -66,7 +69,7 @@ export const fileMetadata = async (req, res) => {
                 token_type,
                 expiry_date,
               });
-              const files = await listGoogleDriveFiles(authClient);
+              const files = await listGoogleDriveFiles(authClient,10);
               const fileDataToInsert = files.map(file => {
                 return {
                   doc_id:file.id,
@@ -78,11 +81,11 @@ export const fileMetadata = async (req, res) => {
               const resdb = await Filedata.insertMany(fileDataToInsert);
               
               searchQuery?
-              cache.set(cacheKey, files, 21600):
-              cache.set(cacheKey, files, 100)
+              cache.set(cacheKey, fileDataToInsert, 21600):
+              cache.set(cacheKey, fileDataToInsert, 100)
   
   
-              results = [...results, ...files];
+              results = [...results, ...fileDataToInsert];
   
             } else if (app?.state == "Dropbox") {
               const { dbx } = await initializeDropbox({
@@ -126,3 +129,55 @@ export const fileMetadata = async (req, res) => {
       .json({ success: false, message: "Error fetching metadata" });
   }
 };
+
+
+export const autocomplete = async (req, res) => {
+  const { query } = req.body; // User input query
+
+  const user = req.user
+  const organization = user?.organization
+
+  if(!organization) return  res
+  .status(403)
+  .json({ success: false, message: "organization id missing" });
+
+  const user_id = user?._id
+
+  try {
+    // Search in FileData for matching filenames
+    const fileDataResults = await Filedata.find({
+      $text: { $search: query },
+    })
+      .limit(5) // Limit the number of results
+      .exec();
+
+    // Search in Search for user's previous search history
+    const searchResults = await Search.find({
+      user_id,
+      $text: { $search: query },
+    })
+      .limit(5) // Limit the number of results
+      .exec();
+
+    // Combine both results (FileData and Search) into a single response
+    const combinedResults = [
+      ...fileDataResults.map((doc) => ({
+        type: 'file',
+        filename: doc.filename,
+        fileId: doc.fileId,
+      })),
+      ...searchResults.map((doc) => ({
+        type: 'search',
+        query: doc.query,
+      })),
+    ];
+
+    // Return the combined recommendations
+    res.json({
+      recommendations: combinedResults,
+    });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'An error occurred during the search.' });
+    }
+}
