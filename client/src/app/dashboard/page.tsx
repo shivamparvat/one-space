@@ -1,25 +1,15 @@
 "use client"
 
 import React, {useEffect, useState} from "react"
-
-import {Avatar, AvatarFallback} from "@radix-ui/react-avatar"
-// import initials from "initials"
-import {DollarSign, Users, CreditCard, Activity, Bold, Turtle} from "lucide-react"
-import {DateRange} from "react-day-picker"
-// import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
-
-// import { DateRangePicker } from "@/components/DateRangePicker"
 import {Button} from "@/components/ui/button"
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs"
 import axios from "axios"
 import {DataTable} from "./components/table"
 import RagOutput from "./components/RagOutput"
-import { useSelector, useStore } from "react-redux"
+import { useSelector } from "react-redux"
 import { RootState } from "@/redux/store"
 import { Input } from "@/components/ui/input"
 import { Toggle } from "@/components/ui/toggle"
-// import { salesData, overviewChartData } from "@/constants/dummyData"
+import { Card } from "@/components/ui/card"
 
 export interface RagOutputType {
   query: string;
@@ -30,6 +20,7 @@ export interface RagOutputType {
 export default function Page() {
   const [searchQuery, setSearchQuery] = useState("");
   const [data, setData] = useState<RagOutputType| null>(null);
+  const [recommendation, setRecommendation] = useState<any[]>([]);
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +43,23 @@ export default function Page() {
         setLoading(false);
       }
     };
+    
+    const autocompleteSearch = async () => {
+      try {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/autocomplete?query=${searchQuery}`, {
+          headers: {
+            Authorization: `Bearer ${token?.token}`,
+          },
+        });
+
+        setRecommendation((response.data?.recommendations || [])); 
+      } catch (err) {
+        setError('Failed to fetch files');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   const AiSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -59,6 +67,9 @@ export default function Page() {
     try {
       const response = await axios.get(process.env.NEXT_PUBLIC_BASE_URL+`/api/v1/ai/search`, {
         params: { searchQuery },
+        headers: {
+          Authorization: `Bearer ${token?.token}`,
+        },
       });
       setData(response?.data?.result);
       setFiles((response.data?.result?.results || [])); 
@@ -84,6 +95,12 @@ export default function Page() {
   }, [token]);
 
 
+  useEffect(() => {
+    if(searchQuery){ 
+      autocompleteSearch();
+    }
+  }, [token,searchQuery]);
+
 
   return (
     <div className="flex-col md:flex">
@@ -93,13 +110,31 @@ export default function Page() {
         </div>
 
         <div className="flex space-x-2">
-       <Input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Enter your query..."
-          className="flex-grow"
-        />
+          <div className="w-full relative">
+            <Input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Enter your query..."
+              className="flex-grow"
+            />
+            {recommendation.length > 0 && (
+              <Card className="p-2 absolute bg-white" style={{backgroundColor:"#fff !important"}}>
+                <ul className="divide-y divide-gray-1000">
+                  {recommendation.map((item, index) => (
+                    <li
+                      key={item?._id}
+                      className="p-2 bg-white hover:bg-gray-100 cursor-pointer"
+                      onClick={() => setSearchQuery(item.filename)} // Set query when clicked
+                    >
+                      {item?.filename}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}      
+          </div>
+
        <Button onClick={()=>{onSearch()}} disabled={loading}>
          {loading ? 'Searching...' : 'Search'}
        </Button>

@@ -130,7 +130,7 @@ export const fileMetadata = async (req, res) => {
 };
 
 export const autocomplete = async (req, res) => {
-  const { query } = req.body; // User input query
+  const { query } = req.query; // User input query
 
   const user = req.user;
   const organization = user?.organization;
@@ -144,31 +144,25 @@ export const autocomplete = async (req, res) => {
 
   try {
     // Search in FileData for matching filenames
-    const fileDataResults = await Filedata.find({
-      $text: { $search: query },
-    })
-      .limit(5) // Limit the number of results
+    const fileDataResults = await Filedata.find({ filename: { $regex: query, $options: 'i' },
+      user_id,
+      organization, })
+      .select("filename")
+      .limit(5) 
       .exec();
 
     // Search in Search for user's previous search history
-    const searchResults = await Search.find({
+    const searchResults = await Search.find({ query: { $regex: query, $options: 'i' },
       user_id,
-      $text: { $search: query },
-    })
+      organization, })
+      .select("query")
       .limit(5) // Limit the number of results
       .exec();
 
     // Combine both results (FileData and Search) into a single response
     const combinedResults = [
-      ...fileDataResults.map((doc) => ({
-        type: "file",
-        filename: doc.filename,
-        fileId: doc.fileId,
-      })),
-      ...searchResults.map((doc) => ({
-        type: "search",
-        query: doc.query,
-      })),
+      ...fileDataResults,
+      ...searchResults
     ];
 
     // Return the combined recommendations
