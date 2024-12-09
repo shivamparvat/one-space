@@ -20,18 +20,6 @@ import { RootState } from "@/redux/store"
 import { Input } from "@/components/ui/input"
 import { Toggle } from "@/components/ui/toggle"
 // import { salesData, overviewChartData } from "@/constants/dummyData"
-interface FileMetadata {
-  Name: string;
-  Owner: string;
-  OwnerEmail: string;
-  MimeType: string;
-  Size: number;
-  CreatedTime: string;
-  ModifiedTime: string;
-  TotalUsers: number | null;
-  InternalUsers: number | null;
-  ExternalUsers: number | null;
-}
 
 export interface RagOutputType {
   query: string;
@@ -40,10 +28,9 @@ export interface RagOutputType {
 }
 
 export default function Page() {
-  const [selectedRange, setSelectedRange] = React.useState<DateRange | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState("");
   const [data, setData] = useState<RagOutputType| null>(null);
-  const [files, setFiles] = useState<any>([]);
+  const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const token = useSelector((state: RootState) => state.login.userToken);

@@ -52,3 +52,44 @@ export const authMiddleware = async (req, res, next) => {
 };
 
 
+
+
+export  const fetchUserByToken = async (res, token)=>{
+  if (!token) {
+    return res.status(401).json({ error: "Authorization header is missing" });
+  }
+
+
+  try {
+    // Decode and verify the token
+    const decoded = JWT.decode(token);
+    if (!decoded) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    const authData = await JWT.verify(token, process.env.JWT_SECRET, {
+      ignoreExpiration: true,
+    });
+
+    // Check if the token is expired
+    const todayDate = new Date().getTime();
+    if (authData.exp < todayDate / 1000) {
+      return res.status(401).json({ error: "Token has expired" });
+    }
+
+
+    // Find the user in the database for validation
+    const user = await User.findById(authData?.user_id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+      return user
+    
+  } catch (error) {
+    const user = await User.findById(authData?.user_id);
+    if (!user) {
+      return res.status(404).json({ error: "something went wrong" });
+    }
+    
+  }
+}

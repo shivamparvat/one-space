@@ -2,6 +2,8 @@ import { google } from "googleapis";
 import AppToken from "../Schema/apptoken.js";
 import { Dropbox } from "dropbox";
 import fetch from "node-fetch";
+import { DROPBOX_STR, GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
+import { fetchUserByToken } from "../middleware/auth.middleware.js";
 
 export async function GoogleAuthUrl(req, res) {
   const oAuth2Client = new google.auth.OAuth2(
@@ -11,14 +13,16 @@ export async function GoogleAuthUrl(req, res) {
   );
   const authUrl = await oAuth2Client.generateAuthUrl({
     access_type: "offline",
-    scope: ["https://www.googleapis.com/auth/drive.metadata.readonly"]
+    scope: ["https://www.googleapis.com/auth/drive.metadata.readonly"],
   });
 
   res.status(200).json({ authUrl });
 }
 
 export async function GoogleCallback(req, res) {
-  const { code, state } = req.query;
+  const { code, state: token } = req.query;
+
+  const user = await fetchUserByToken(res, token);
 
   const hostUrl = `${req.protocol}://${req.get("host")}`;
 
@@ -30,9 +34,20 @@ export async function GoogleCallback(req, res) {
     );
     const { tokens } = await oAuth2Client.getToken(code);
 
+    const findToken = await new AppToken.find({
+      user_id: user?._id,
+      organization: user?.organization,
+    });
+
+    if (!findToken) {
+      return res.redirect("/dashboard");
+    }
+
     const newAuth = new AppToken({
+      user_id: user?._id,
+      organization: user?.organization,
       ...tokens,
-      state
+      state: GOOGLE_DRIVE_STR,
     });
     await newAuth.save();
 
@@ -46,24 +61,22 @@ export async function GoogleCallback(req, res) {
     const startPageToken = startPageData.startPageToken;
 
     // Step 2: Create a unique channel ID and set up the webhook URL
-    const channelId = `channel_${Date.now()}`.replace(/[^A-Za-z0-9-_+/=]/g, '');
+    const channelId = `channel_${Date.now()}`.replace(/[^A-Za-z0-9-_+/=]/g, "");
     const webhookUrl = `https://5dfd-106-222-217-104.ngrok-free.app/api/v1/webhook/drive`; // Webhook URL to receive notifications
 
-
-    console.log(channelId)
+    console.log(channelId);
     // Step 3: Set up the watch request on changes feed
     const watchRequest = {
       resource: {
         id: channelId,
         type: "web_hook",
-        address: webhookUrl // Webhook URL to receive change notifications
+        address: webhookUrl, // Webhook URL to receive change notifications
       },
-      pageToken: startPageToken // Include the required pageToken here
+      pageToken: startPageToken, // Include the required pageToken here
     };
-  
+
     // Start watching for changes
     const response = await drive.changes.watch(watchRequest);
-    console.log(response);
 
     return res.redirect("/dashboard"); // Change this to your desired redirect URL
   } catch (error) {
@@ -77,7 +90,7 @@ export async function GoogleCallback(req, res) {
 const config = {
   fetch,
   clientId: process.env.DROPBOX_CLIENT_ID,
-  clientSecret: process.env.DROPBOX_CLIENT_SECRET
+  clientSecret: process.env.DROPBOX_CLIENT_SECRET,
 };
 
 const dbx = new Dropbox(config);
@@ -92,7 +105,7 @@ export async function DropboxAuthUrl(req, res) {
       "none",
       false
     )
-    .then(authUrl => {
+    .then((authUrl) => {
       res.writeHead(302, { Location: authUrl });
       res.end();
     });
@@ -116,7 +129,7 @@ export async function DropboxCallback(req, res) {
     const dbx = new Dropbox({
       fetch,
       clientId: process.env.DROPBOX_CLIENT_ID,
-      clientSecret: process.env.DROPBOX_CLIENT_SECRET
+      clientSecret: process.env.DROPBOX_CLIENT_SECRET,
     });
 
     const response = await dbx.auth.getAccessTokenFromCode(
@@ -124,13 +137,8 @@ export async function DropboxCallback(req, res) {
       code
     );
 
-    const {
-      access_token,
-      refresh_token,
-      token_type,
-      scope,
-      expires_in
-    } = response.result;
+    const { access_token, refresh_token, token_type, scope, expires_in } =
+      response.result;
 
     const newAuth = new AppToken({
       access_token,
@@ -138,7 +146,7 @@ export async function DropboxCallback(req, res) {
       token_type,
       scope,
       expiry_date: expires_in,
-      state
+      state: DROPBOX_STR,
     });
 
     await newAuth.save();

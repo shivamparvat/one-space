@@ -2,6 +2,7 @@ import { createEmbedding } from "../helper/Embedding.js";
 import { authorizeGoogleDrive, listGoogleDriveFiles } from "../helper/metaData/drive.js";
 import AppToken from "../Schema/apptoken.js";
 import AiQurey from "../helper/AiQurey.js"
+import {DROPBOX_STR, GOOGLE_DRIVE_STR} from "../constants/appNameStr.js"
 
 export const Embedding = async (req, res) => {
   initEmbedding(req, res);
@@ -33,7 +34,7 @@ async function initEmbedding(req, res) {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
 
-      if (app?.state === "Google Drive") {
+      if (app?.state === GOOGLE_DRIVE_STR) {
         const authClient = await authorizeGoogleDrive({
           access_token,
           refresh_token,
@@ -55,6 +56,7 @@ async function initEmbedding(req, res) {
             fileId,
             file
           );
+          console.log(embeddingResult?.response)
 
           // if (!embeddingResult.success) {
           //   throw new Error(
@@ -70,7 +72,7 @@ async function initEmbedding(req, res) {
           res.status(200)
         }
       }
-      else if(app?.state === "Dropbox"){
+      else if(app?.state === DROPBOX_STR){
         
       }
     }

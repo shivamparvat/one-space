@@ -29,7 +29,6 @@ const cache = {
     // ttl = time-to-live in seconds
     try {
       await client.set(key, JSON.stringify(value), { EX: ttl });
-      console.log(`Set cache for key: ${key}`);
     } catch (err) {
       console.error("Error setting cache:", err);
     }
@@ -42,7 +41,6 @@ const cache = {
    */
   async get(key) {
     try {
-      console.log(`get cache for key: ${key}`);
       const value = await client.get(key);
       return value ? JSON.parse(value) : null;
     } catch (err) {

@@ -5,47 +5,54 @@ import gmail from "@/asset/apps/gmail.png"
 import notion from "@/asset/apps/notion.png"
 import slack from "@/asset/apps/slack.png"
 
+export const GOOGLE_DRIVE_STR = "GOOGLE_DRIVE"
+export const ONE_DRIVE_STR = "ONE_DRIVE"
+export const DROPBOX_STR = "DROPBOX"
+export const NOTION_STR = "NOTION"
+export const SLACK_STR = "SLACK"
+
 const appsList = [
-    {id: 1, name: 'Google Drive', logo: drive},
-    {id: 2, name: 'OneDrive', logo: onedrive},
-    {id: 3, name: 'Dropbox', logo: dropbox},
+    { id: 1, name: GOOGLE_DRIVE_STR, logo: drive },
+    { id: 2, name: ONE_DRIVE_STR, logo: onedrive },
+    { id: 3, name: DROPBOX_STR, logo: dropbox },
     // {id: 6, name: 'Gmail', logo: gmail},
-    {id: 5, name: 'Notion', logo: notion},
-    {id: 4, name: 'Slack', logo: slack},
+    { id: 5, name: NOTION_STR, logo: notion },
+    { id: 4, name: SLACK_STR, logo: slack },
 ];
+
 
 
 export const oauthUrls = {
     "Google Drive": {
         id: 1,
-        name: 'Google Drive',
+        name: GOOGLE_DRIVE_STR,
         logo: drive,
         authUrl: "https://accounts.google.com/o/oauth2/auth",
         params: {
             client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT, // Replace with your actual client ID
             redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
             response_type: "code",                // Use "token" for Implicit flow,
-            state: "Google Drive",
+            state: GOOGLE_DRIVE_STR,
             scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.readonly", // Scope for Google Drive
             access_type: "offline"
         },
     },
     "OneDrive": {
-        id: 2,       
-        name: 'OneDrive',
+        id: 2,
+        name: ONE_DRIVE_STR,
         logo: onedrive,
         authUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
         params: {
             client_id: "YOUR_ONEDRIVE_CLIENT_ID", // Replace with your actual client ID
             redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,     // Replace with your actual redirect URI
             response_type: "code",                  // Use "token" for Implicit flow,
-            state: "OneDrive",
+            state: ONE_DRIVE_STR,
             scope: "Files.ReadWrite",               // Scope for OneDrive
         },
     },
     "Dropbox": {
         id: 3,
-        name: 'Dropbox',
+        name: DROPBOX_STR,
         logo: dropbox,
         authUrl: "https://www.dropbox.com/oauth2/authorize",
         params: {
@@ -53,7 +60,7 @@ export const oauthUrls = {
             response_type: "code",                // Use "token" for Implicit flow
             redirect_uri: "http://localhost:5000/api/v1/auth/url/dropbox/callback",
             token_access_type: "offline",
-            state: "Dropbox",
+            state: DROPBOX_STR,
             scope: "files.metadata.write files.content.read file_requests.write sharing.read contacts.write profile email sharing.write account_info.write"
         },
     },
@@ -72,27 +79,27 @@ export const oauthUrls = {
     // },
     "Notion": {
         id: 5,
-        name: 'Notion',
+        name: NOTION_STR,
         logo: notion,
         authUrl: "https://www.notion.so/api/v1/oauth/authorize",
         params: {
             client_id: process.env.NEXT_PUBLIC_NOTION_CLIENT,  // Replace with your actual client ID
             redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
             response_type: "code",                // Use "token" for Implicit flow,
-            state: "Notion",
+            state: NOTION_STR,
             scope: "read",                        // Modify as per your needs
         },
     },
     "Slack": {
         id: 6,
-        name: 'Slack',
+        name: SLACK_STR,
         logo: slack,
         authUrl: "https://slack.com/oauth/authorize",
         params: {
             client_id: process.env.NEXT_PUBLIC_SLACK_CLIENT,   // Replace with your actual client ID
             redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
             response_type: "code",                // Use "token" for Implicit flow,
-            state: "Slack",
+            state: SLACK_STR,
             scope: "commands",                    // Modify as per your needs
         },
     },

@@ -1,0 +1,5 @@
+export const  GOOGLE_DRIVE_STR = "GOOGLE_DRIVE"
+export const  ONE_DRIVE_STR = "ONE_DRIVE"
+export const  DROPBOX_STR = "DROPBOX"
+export const  NOTION_STR = "NOTION"
+export const  SLACK_STR = "SLACK"

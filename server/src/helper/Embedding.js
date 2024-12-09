@@ -23,7 +23,7 @@ export async function createEmbedding(auth, fileId, metaData) {
       data: response?.data
     };
   } catch (error) {
-    console.error("Error creating embedding:", error?.response?.data);
+    console.error("Error creating embedding:", error);
     return {
       success: false,
       message: error.message || "An error occurred while creating the embedding"

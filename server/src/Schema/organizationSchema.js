@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const organizationSchema = new mongoose.Schema(
   {
+    user_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+      index: true, 
+    },
     name: {
       type: String,
       required: true, // Organization name

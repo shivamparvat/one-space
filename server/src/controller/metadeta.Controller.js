@@ -1,6 +1,6 @@
 import AppToken from "../Schema/apptoken.js";
-import Filedata from "../Schema/fileMetadata.js"; 
-import Search from "../Schema/searchSchema.js"; 
+import Filedata from "../Schema/fileMetadata.js";
+import Search from "../Schema/searchSchema.js";
 
 import cache from "../redis/cache.js";
 import {
@@ -11,57 +11,63 @@ import {
   fetchDetailedDropboxFileData,
   initializeDropbox,
 } from "../helper/metaData/dropbox.js";
+import { DROPBOX_STR, GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
 
 export const fileMetadata = async (req, res) => {
   try {
     let results = [];
-    const user = req.user
-    const organization = user?.organization
+    const user = req.user;
+    const organization = user?.organization;
 
-    if(!organization) return  res
-    .status(403)
-    .json({ success: false, message: "organization id missing" });
+    if (!organization)
+      return res
+        .status(403)
+        .json({ success: false, message: "organization id missing" });
 
-    const user_id = user?._id
-    const searchQuery = req.query.search || ""; 
+    const user_id = user?._id;
+    const searchQuery = req.query.search || "";
     const searchFilter = searchQuery
       ? {
           $text: { $search: searchQuery },
         }
       : {};
 
-      const page = parseInt(req.query.page, 10) || 1; 
-      const limit = parseInt(req.query.limit, 10) || 10;
-      const skip = (page - 1) * limit;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
 
-      const connectedApps = await AppToken.find();
+    const connectedApps = await AppToken.find();
     for (const app of connectedApps) {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
 
       const mainCache = `${user_id}_${organization}`;
-      const cacheKey = searchQuery ? `${user_id}_${organization}_${searchQuery}`: mainCache
+      const cacheKey = searchQuery
+        ? `${user_id}_${organization}_${searchQuery}`
+        : mainCache;
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
 
       if ((cachedData || []).length > 0) {
-        console.log("cache data")
+        console.log("cache data");
         results = [...results, ...cachedData];
       } else {
-
-        const dbData = await Filedata.find({ organization,user_id, ...searchFilter })
+        const dbData = await Filedata.find({
+          organization,
+          user_id,
+          ...searchFilter,
+        })
           .skip(skip)
           .limit(limit);
+
         if (dbData.length > 0) {
-          console.log("data from databse")
+          console.log("data from databse");
           results = [...results, ...dbData];
-          searchQuery?
-          cache.set(cacheKey, dbData, 21600):
-          cache.set(cacheKey, dbData, 100)
+          cache.set(cacheKey, dbData, 100);
         } else {
-          if(!searchQuery){
-            if (app?.state == "Google Drive") {
-              console.log("google")
+          if (!searchQuery) {
+            if (app?.state == GOOGLE_DRIVE_STR) {
+              console.log("google");
               const authClient = await authorizeGoogleDrive({
                 access_token,
                 refresh_token,
@@ -69,25 +75,21 @@ export const fileMetadata = async (req, res) => {
                 token_type,
                 expiry_date,
               });
-              const files = await listGoogleDriveFiles(authClient,10);
-              const fileDataToInsert = files.map(file => {
+              const files = await listGoogleDriveFiles(authClient, 10);
+              const fileDataToInsert = files.map((file) => {
                 return {
-                  doc_id:file.id,
+                  doc_id: file.id,
                   user_id,
                   organization,
-                  data:file
+                  data: file,
                 };
               });
               const resdb = await Filedata.insertMany(fileDataToInsert);
-              
-              searchQuery?
-              cache.set(cacheKey, fileDataToInsert, 21600):
-              cache.set(cacheKey, fileDataToInsert, 100)
-  
-  
+
+              cache.set(cacheKey, fileDataToInsert, 100);
+
               results = [...results, ...fileDataToInsert];
-  
-            } else if (app?.state == "Dropbox") {
+            } else if (app?.state == DROPBOX_STR) {
               const { dbx } = await initializeDropbox({
                 accessToken: access_token,
                 refreshToken: refresh_token,
@@ -96,24 +98,21 @@ export const fileMetadata = async (req, res) => {
                 expiryDate: expiry_date,
                 scope,
               });
-  
+
               const files = await fetchDetailedDropboxFileData(dbx);
-  
-              const fileDataToInsert = files.map(file => {
+
+              const fileDataToInsert = files.map((file) => {
                 return {
-                  doc_id:file.id,
+                  doc_id: file.id,
                   user_id,
                   organization,
-                  data:file
+                  data: file,
                 };
               });
               await Filedata.insertMany(fileDataToInsert);
-  
-              searchQuery?
-              cache.set(cacheKey, files, 21600):
-              cache.set(cacheKey, files, 100)
-  
-  
+
+              cache.set(cacheKey, files, 100);
+
               results = [...results, ...files];
             }
           }
@@ -130,18 +129,18 @@ export const fileMetadata = async (req, res) => {
   }
 };
 
-
 export const autocomplete = async (req, res) => {
   const { query } = req.body; // User input query
 
-  const user = req.user
-  const organization = user?.organization
+  const user = req.user;
+  const organization = user?.organization;
 
-  if(!organization) return  res
-  .status(403)
-  .json({ success: false, message: "organization id missing" });
+  if (!organization)
+    return res
+      .status(403)
+      .json({ success: false, message: "organization id missing" });
 
-  const user_id = user?._id
+  const user_id = user?._id;
 
   try {
     // Search in FileData for matching filenames
@@ -162,12 +161,12 @@ export const autocomplete = async (req, res) => {
     // Combine both results (FileData and Search) into a single response
     const combinedResults = [
       ...fileDataResults.map((doc) => ({
-        type: 'file',
+        type: "file",
         filename: doc.filename,
         fileId: doc.fileId,
       })),
       ...searchResults.map((doc) => ({
-        type: 'search',
+        type: "search",
         query: doc.query,
       })),
     ];
@@ -176,8 +175,8 @@ export const autocomplete = async (req, res) => {
     res.json({
       recommendations: combinedResults,
     });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'An error occurred during the search.' });
-    }
-}
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "An error occurred during the search." });
+  }
+};
