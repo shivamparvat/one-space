@@ -29,6 +29,7 @@ const buildOAuthUrl = (appName: any, token: string) => {
   const updatedParams = params;
   updatedParams.state = token;
   const queryString = new URLSearchParams(updatedParams).toString();
+  console.log(`${authUrl}?${queryString}`)
   return `${authUrl}?${queryString}`;
 };
 

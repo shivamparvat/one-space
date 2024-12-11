@@ -4,7 +4,11 @@ import AppToken from "../Schema/apptoken.js"; // Adjust the path as necessary
 
 // Function to store the token
 export const connect = async (req, res) => {
-  const cacheKey = "org_tokens";
+  const user = req.user;
+  const user_id = user?.user_id;
+  const organization = user?.organization;
+
+  const cacheKey = `${user_id}_${organization}`;
 
   try {
     const { state, token, scope } = req.body;
@@ -28,8 +32,11 @@ export const connect = async (req, res) => {
 
 // Function to disconnect and delete the token
 export const disconnect = async (req, res) => {
-  const cacheKey = "org_tokens";
-  
+  const user = req.user;
+  const user_id = user?.user_id;
+  const organization = user?.organization;
+
+  const cacheKey = `${user_id}_${organization}`;
 
   try {
     const { id } = req.params; // Get the id from the request parameters
@@ -62,21 +69,23 @@ export const disconnect = async (req, res) => {
 // Function to list all stored tokens
 export const listTokens = async (req, res) => {
   try {
-    const cacheKey = "org_tokens";
+    const user = req.user;
+    const user_id = user?.user_id;
+    const organization = user?.organization;
 
-    await cache.del(cacheKey);
+    const cacheKey = `${user_id}_${organization}`;
+
     let tokens = await cache.get(cacheKey);
 
     if ((tokens || []).length > 0) {
-      console.log("Returning cached tokens");
       return res
         .status(200)
         .json({ message: "Tokens retrieved successfully", data: tokens });
     }
 
-    tokens = await AppToken.find();
+    tokens = await AppToken.find({ user_id, organization });
 
-    await cache.set(cacheKey, tokens, 3600);
+    await cache.set(cacheKey, tokens, 5);
 
     res
       .status(200)

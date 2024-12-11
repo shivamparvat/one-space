@@ -1,7 +1,7 @@
 import drive from "@/asset/apps/google-drive.png"
 import onedrive from "@/asset/apps/one-drive.png"
 import dropbox from "@/asset/apps/dropbox.png"
-import gmail from "@/asset/apps/gmail.png"
+// import gmail from "@/asset/apps/gmail.png"
 import notion from "@/asset/apps/notion.png"
 import slack from "@/asset/apps/slack.png"
 
@@ -23,7 +23,7 @@ const appsList = [
 
 
 export const oauthUrls = {
-    "Google Drive": {
+    "GOOGLE_DRIVE": {
         id: 1,
         name: GOOGLE_DRIVE_STR,
         logo: drive,
@@ -32,12 +32,13 @@ export const oauthUrls = {
             client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT, // Replace with your actual client ID
             redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
             response_type: "code",                // Use "token" for Implicit flow,
+            access_type: "offline",
+            prompt:"consent",
             state: GOOGLE_DRIVE_STR,
             scope: "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly https://www.googleapis.com/auth/drive.readonly", // Scope for Google Drive
-            access_type: "offline"
         },
     },
-    "OneDrive": {
+    "ONE_DRIVE": {
         id: 2,
         name: ONE_DRIVE_STR,
         logo: onedrive,
@@ -50,7 +51,7 @@ export const oauthUrls = {
             scope: "Files.ReadWrite",               // Scope for OneDrive
         },
     },
-    "Dropbox": {
+    "DROPBOX": {
         id: 3,
         name: DROPBOX_STR,
         logo: dropbox,
@@ -77,7 +78,7 @@ export const oauthUrls = {
     //         scope: "https://www.googleapis.com/auth/gmail.readonly", // Scope for Gmail
     //     },
     // },
-    "Notion": {
+    "NOTION": {
         id: 5,
         name: NOTION_STR,
         logo: notion,
@@ -90,7 +91,7 @@ export const oauthUrls = {
             scope: "read",                        // Modify as per your needs
         },
     },
-    "Slack": {
+    "SLACK": {
         id: 6,
         name: SLACK_STR,
         logo: slack,

@@ -24,6 +24,9 @@ export async function GoogleCallback(req, res) {
 
   const user = await fetchUserByToken(res, token);
 
+  const user_id = user?._id;
+  const organization = user?.organization;
+
   const hostUrl = `${req.protocol}://${req.get("host")}`;
 
   try {
@@ -34,18 +37,15 @@ export async function GoogleCallback(req, res) {
     );
     const { tokens } = await oAuth2Client.getToken(code);
 
-    const findToken = await new AppToken.find({
-      user_id: user?._id,
-      organization: user?.organization,
-    });
+    // const findToken = await new AppToken.find();
 
-    if (!findToken) {
-      return res.redirect("/dashboard");
-    }
+    // if (!findToken) {
+    //   return res.redirect("/dashboard");
+    // }
 
     const newAuth = new AppToken({
-      user_id: user?._id,
-      organization: user?.organization,
+      user_id,
+      organization,
       ...tokens,
       state: GOOGLE_DRIVE_STR,
     });
@@ -62,7 +62,7 @@ export async function GoogleCallback(req, res) {
 
     // Step 2: Create a unique channel ID and set up the webhook URL
     const channelId = `channel_${Date.now()}`.replace(/[^A-Za-z0-9-_+/=]/g, "");
-    const webhookUrl = `https://5dfd-106-222-217-104.ngrok-free.app/api/v1/webhook/drive`; // Webhook URL to receive notifications
+    const webhookUrl = `https://da1e-122-168-189-232.ngrok-free.app/api/v1/webhook/drive`; // Webhook URL to receive notifications
 
     console.log(channelId);
     // Step 3: Set up the watch request on changes feed
