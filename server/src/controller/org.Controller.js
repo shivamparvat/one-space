@@ -4,10 +4,10 @@ import User from '../Schema/userSchema.js';
 // Create a new organization
 export const add = async (req, res) => {
   try {
-    const userId = req.user._id; // Extract user ID from request
+    const user_id = req.user._id; // Extract user ID from request
 
     // Create the organization from the request body
-    const organization = await Organization.create(req.body);
+    const organization = await Organization.create({...req.body, user_id});
     if (!organization) {
       return res.status(400).json({ message: 'Failed to create organization' }); // Changed to 400 for creation failure
     }
@@ -17,7 +17,7 @@ export const add = async (req, res) => {
 
     // Update the user with the newly created organization ID
     const user = await User.findByIdAndUpdate(
-      userId,
+      user_id,
       { organization: orgId }, // Link the organization to the user
       { new: true, runValidators: true }
     );

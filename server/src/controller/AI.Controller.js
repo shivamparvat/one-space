@@ -23,7 +23,10 @@ export const AIsearch = async (req, res) => {
 
 
 async function initEmbedding(req, res) {
-  const connectedApps = await AppToken.find();
+  const user = req.user;
+  const organization = user?.organization;
+  const user_id = user?._id;
+  const connectedApps = await AppToken.find({organization, user_id});
 
   // res.setHeader("Content-Type", "text/event-stream");
   // res.setHeader("Cache-Control", "no-cache");

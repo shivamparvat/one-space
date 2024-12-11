@@ -1,7 +1,8 @@
 export const driveWebhook = async (req, res) => {
   try {
-    const resourceId = req.headers["x-goog-resource-id"];
-    
+    // const resourceId = req.headers["x-goog-resource-id"];
+    const resourceId = "1le3wK8uPHsWu5yOiFlrJFV44iL1sS79oL7aAIz09sBs";
+    console.log(resourceId,"resourceId")
     if (resourceId) {
       // Fetch latest metadata using the resource ID
       const fileMetadata = await getFileMetadata(drive, resourceId);
