@@ -61,7 +61,7 @@ export async function GoogleCallback(req, res) {
     const startPageToken = startPageData.startPageToken;
 
     // Step 2: Create a unique channel ID and set up the webhook URL
-    const channelId = `channel_${Date.now()}`.replace(/[^A-Za-z0-9-_+/=]/g, "");
+    const channelId = `${user_id}_${organization}`;
     const webhookUrl = `https://9c58-106-222-219-231.ngrok-free.app/api/v1/webhook/drive`; // Webhook URL to receive notifications
 
     console.log(channelId);
