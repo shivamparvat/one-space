@@ -10,6 +10,17 @@ import { RootState } from "@/redux/store"
 import { Input } from "@/components/ui/input"
 import { Toggle } from "@/components/ui/toggle"
 import { Card } from "@/components/ui/card"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export interface RagOutputType {
   query: string;
@@ -103,11 +114,43 @@ export default function Page() {
   }, [token,searchQuery]);
 
 
+
+  const AiPermission = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(process.env.NEXT_PUBLIC_BASE_URL+`/api/v1/user/permission`, {
+        headers: {
+          Authorization: `Bearer ${token?.token}`,
+        },
+      });
+    } catch (error) {
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <div className="flex-col md:flex">
       <div className="flex-1 space-y-4">
         <div className="flex-col items-center justify-between space-y-2 md:flex md:flex-row">
-          <h2 className="text-3xl font-bold tracking-tight">Access Control</h2>
+          <div><h2 className="text-3xl font-bold tracking-tight">Access Control</h2></div>
+          <div>{!(token?.user?.ai_permission || false)? <AlertDialog>
+            <AlertDialogTrigger><Button variant="secondary">USE AI</Button></AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                Your data will be processed by our AI to improve your search. Proceed if you agree.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => AiPermission()}>Continue</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>:""}</div>
         </div>
 
         <div className="flex space-x-2">

@@ -1,6 +1,7 @@
 import { OAuth2Client } from "google-auth-library";
 import User from "../Schema/userSchema.js";
 import { compareHash, signJwt } from "../utils/Jwt.js";
+import { initEmbedding } from "./AI.Controller.js";
 
 const client = new OAuth2Client();
 
@@ -119,7 +120,7 @@ export const login = async (req, res) => {
         contact_number: findUser.contact_number,
         role: findUser.role,
         is_active: findUser.is_active,
-        local_area: findUser.local_area
+        ai_permission: findUser.ai_permission
       };
 
       const jwtToken = await signJwt(payLoad);
@@ -146,3 +147,31 @@ export const login = async (req, res) => {
     });
   }
 };
+
+
+export const permission = async (req, res) => {
+  try {
+    const userDetails = req.user
+    const userId = userDetails?._id
+    // Find the user and check their current ai_permission status
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    if (user.ai_permission) {
+      return res.status(400).json({ success: false, message: "AI permission is already enabled." });
+    }
+
+    // Update ai_permission to true
+    user.ai_permission = true;
+    await user.save();
+    initEmbedding(req,res)
+    return res.status(200).json({ success: true, message: "AI permission updated successfully.", user });
+  } catch (error) {
+    console.error("Error updating AI permission:", error);
+    return res.status(500).json({ success: false, message: "An error occurred while updating AI permission.", error });
+  }
+
+}
