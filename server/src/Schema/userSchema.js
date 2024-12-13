@@ -48,6 +48,10 @@ const userSchema = new Schema(
       type: Boolean,
       default: false
     },
+    ai_permission: {
+      type: Boolean,
+      default: false
+    },
     email_verify_tokan: String,
     reset_pass_tokan: String,
     reset_pass_expiry: String
