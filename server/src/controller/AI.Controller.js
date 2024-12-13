@@ -27,6 +27,10 @@ async function initEmbedding(req, res) {
   const user_id = user?._id;
   const organization = user?.organization;
   const connectedApps = await AppToken.find({ user_id, organization });
+  const user = req.user;
+  const organization = user?.organization;
+  const user_id = user?._id;
+  const connectedApps = await AppToken.find({organization, user_id});
 
   // res.setHeader("Content-Type", "text/event-stream");
   // res.setHeader("Cache-Control", "no-cache");

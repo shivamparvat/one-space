@@ -35,15 +35,16 @@ export const fileMetadata = async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
+    
 
-    const connectedApps = await AppToken.find();
+    const connectedApps = await AppToken.find({organization, user_id});
     for (const app of connectedApps) {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
 
-      const mainCache = `${user_id}_${organization}`;
+      const mainCache = `file_${user_id}_${organization}`;
       const cacheKey = searchQuery
-        ? `${user_id}_${organization}_${searchQuery}`
+        ? `file_${user_id}_${organization}_${searchQuery}`
         : mainCache;
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);

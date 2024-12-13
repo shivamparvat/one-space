@@ -28,9 +28,9 @@ export default function Page() {
   const [aiToggle, setAiToggle] = useState(false)
 
     
-    const fetchFiles = async () => {
+    const fetchFiles = async (searchStr:string) => {
       try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/list?search=${aiToggle?"":searchQuery}`,{}, {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/list?search=${searchStr}`,{}, {
           headers: {
             Authorization: `Bearer ${token?.token}`,
           },
@@ -44,7 +44,7 @@ export default function Page() {
       }
     };
     
-    const autocompleteSearch = async () => {
+    const autocompleteSearch = async (searchQuery:string) => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/autocomplete?query=${searchQuery}`, {
           headers: {
@@ -61,7 +61,7 @@ export default function Page() {
       }
     };
 
-  const AiSearch = async () => {
+  const AiSearch = async (searchQuery:string) => {
     if (!searchQuery.trim()) return;
     setLoading(true);
     try {
@@ -84,20 +84,21 @@ export default function Page() {
     setData(null)
     setFiles([])
     if(aiToggle && searchQuery){
-      AiSearch()
+      AiSearch(searchQuery)
+    }else{
+      fetchFiles(searchQuery)
     }
-    fetchFiles()
   }
 
 
   useEffect(() => {
-    fetchFiles();
+    fetchFiles("");
   }, [token]);
 
 
   useEffect(() => {
     if(searchQuery){ 
-      autocompleteSearch();
+      autocompleteSearch(searchQuery);
     }
   }, [token,searchQuery]);
 
@@ -114,18 +115,30 @@ export default function Page() {
             <Input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) =>{
+                  if(!e.target.value){
+                    fetchFiles("")
+                  }
+                 setSearchQuery(e.target.value)}}
               placeholder="Enter your query..."
               className="flex-grow"
             />
             {recommendation.length > 0 && (
-              <Card className="p-2 absolute bg-white" style={{backgroundColor:"#fff !important"}}>
-                <ul className="divide-y divide-gray-1000">
+              <Card className="p-2 absolute bg-white z-10" style={{backgroundColor:"#fff !important"}}>
+                <ul className="divide-y ">
                   {recommendation.map((item, index) => (
                     <li
                       key={item?._id}
-                      className="p-2 bg-white hover:bg-gray-100 cursor-pointer"
-                      onClick={() => setSearchQuery(item.filename)} // Set query when clicked
+                      className="p-2 bg-white cursor-pointer"
+                      onClick={() => {
+                        setSearchQuery(item.filename)
+                        if(aiToggle){
+                          AiSearch(item.filename)
+                        }else{
+                          fetchFiles(item.filename)
+                        }
+                        setRecommendation([])
+                      }} // Set query when clicked
                     >
                       {item?.filename}
                     </li>
