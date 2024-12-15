@@ -79,9 +79,9 @@ export default function Layout({ children }: LayoutProps) {
             </Button>
           </div>
           <Separator />
-          <div className={cn("flex h-[52px] items-center justify-center", isCollapsed ? "h-[52px]" : "px-2")}>
+          {/* <div className={cn("flex h-[52px] items-center justify-center", isCollapsed ? "h-[52px]" : "px-2")}>
             <AccountSwitcher isCollapsed={isCollapsed} />
-          </div>
+          </div> */}
           <Sidebar isCollapsed={isCollapsed} />
         </ResizablePanel>
 
@@ -96,9 +96,9 @@ export default function Layout({ children }: LayoutProps) {
             </Button>
 
             <div className="flex gap-2">
-              <div className="md:block lg:hidden">
+              {/* <div className="md:block lg:hidden">
                 <AccountSwitcher isCollapsed />
-              </div>
+              </div> */}
               <UserNav />
             </div>
           </div>

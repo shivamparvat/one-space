@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { useRouter } from "next/navigation";
 
 const buildOAuthUrl = (appName: any, token: string) => {
   const { authUrl, params }: any =
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [connectedApps, setConnectedApps] = useState<any[]>([]); // State to store connected apps
   const [loading, setLoading] = useState(true); // Loading state
+  const router = useRouter();
 
   const token = useSelector((state: RootState) => state.login.userToken);
   // Fetch connected apps
@@ -52,8 +54,10 @@ export default function Dashboard() {
           }
         ); // Adjust the API endpoint as needed
         setConnectedApps((response.data && response.data.data) || []);
-      } catch (error) {
-        console.error("Error fetching connected apps:", error);
+      } catch (error:any) {
+        if(error?.status == 401){
+          router.replace("/login")
+        }
       } finally {
         setLoading(false);
       }
@@ -79,8 +83,10 @@ export default function Dashboard() {
       );
 
       console.log("Disconnect response:", response.data);
-    } catch (error) {
-      console.error("Error disconnecting app:", error);
+    } catch (error:any) {
+      if(error?.status == 401){
+        router.replace("/login")
+      }
     }
   }
 

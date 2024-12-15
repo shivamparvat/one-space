@@ -14,6 +14,8 @@ import {useDispatch, useSelector} from "react-redux";
 import {AnyAction} from "redux";
 import { RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { setToken } from "@/redux/reducer/login";
 
 export default function LoginPage() {
     const [loading, setLoading] = useState(false);
@@ -31,10 +33,34 @@ export default function LoginPage() {
             setLoading(false);
         }
     };
-    
+
+    const fatchUserData = async(token:any) => {
+        setLoading(true);
+        try {
+          const response = await axios.get(process.env.NEXT_PUBLIC_BASE_URL+`/api/v1/user/updated`, {
+              headers: {
+                  Authorization: `Bearer ${token?.token}`,
+              },
+          });
+          const updatedData = {...token};
+          updatedData.user = response?.data?.user
+          dispatch(setToken(updatedData))
+        } catch (error:any) {
+            if(error?.status == 401){
+                router.replace("/login")
+            }
+        } finally {
+          setLoading(false);
+        }
+    }
     useEffect(() => {
         if(token){
-            router.push("/dashboard")
+            fatchUserData(token)
+            if(!token?.user?.organization){
+                router.push("/setup")
+            }else{
+                router.push("/dashboard")
+            }
         }
     }, [token])
     

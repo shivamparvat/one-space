@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation"
 
 export interface RagOutputType {
   query: string;
@@ -37,25 +38,30 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const token = useSelector((state: RootState) => state.login.userToken);
   const [aiToggle, setAiToggle] = useState(false)
+  const [connectedApp, setConnectedApp] = useState(true)
+  const router = useRouter();
 
     
-    const fetchFiles = async (searchStr:string) => {
-      try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/list?search=${searchStr}`,{}, {
-          headers: {
-            Authorization: `Bearer ${token?.token}`,
-          },
-        });
-        setFiles((response.data?.data || [])); 
-      } catch (err) {
-        setError('Failed to fetch files');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    const autocompleteSearch = async (searchQuery:string) => {
+  const fetchFiles = async (searchStr:string) => {
+        try {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/list?search=${searchStr}`,{}, {
+            headers: {
+              Authorization: `Bearer ${token?.token}`,
+            },
+          });
+          setFiles((response.data?.data || [])); 
+          setConnectedApp((response.data?.appIsEmpty || false)); 
+        } catch (err:any) {
+          setError('Failed to fetch files');
+          if(err?.status == 401){
+            router.replace("/login")
+          }
+        } finally {
+          setLoading(false);
+        }
+  };
+  
+  const autocompleteSearch = async (searchQuery:string) => {
       try {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/autocomplete?query=${searchQuery}`, {
           headers: {
@@ -64,13 +70,17 @@ export default function Page() {
         });
 
         setRecommendation((response.data?.recommendations || [])); 
-      } catch (err) {
+      } catch (err:any) {
         setError('Failed to fetch files');
-        console.error(err);
+        if(err?.status == 401){
+          router.replace("/login")
+        }
       } finally {
         setLoading(false);
       }
-    };
+  };
+
+
 
   const AiSearch = async (searchQuery:string) => {
     if (!searchQuery.trim()) return;
@@ -84,8 +94,11 @@ export default function Page() {
       });
       setData(response?.data?.result);
       setFiles((response.data?.result?.results || [])); 
-    } catch (error) {
+    } catch (error:any) {
       setData(null);
+      if(error?.status == 401){
+        router.replace("/login")
+      }
     } finally {
       setLoading(false);
     }
@@ -93,7 +106,8 @@ export default function Page() {
 
   function onSearch(){
     setData(null)
-    setFiles([])
+    // setFiles([])
+    setRecommendation([])
     if(aiToggle && searchQuery){
       AiSearch(searchQuery)
     }else{
@@ -123,8 +137,11 @@ export default function Page() {
           Authorization: `Bearer ${token?.token}`,
         },
       });
-    } catch (error) {
+    } catch (error:any) {
       setData(null);
+      if(error?.status == 401){
+        router.replace("/login")
+      }
     } finally {
       setLoading(false);
     }
@@ -133,6 +150,11 @@ export default function Page() {
 
   return (
     <div className="flex-col md:flex">
+     {connectedApp ?<div className="flex justify-center items-center h-[80vh]">
+          <div>
+             <Button onClick={()=>router.push("/dashboard/connect")}>Connect APPS</Button>
+          </div>
+      </div>:
       <div className="flex-1 space-y-4">
         <div className="flex-col items-center justify-between space-y-2 md:flex md:flex-row">
           <div><h2 className="text-3xl font-bold tracking-tight">Access Control</h2></div>
@@ -147,7 +169,7 @@ export default function Page() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => AiPermission()}>Continue</AlertDialogAction>
+                <AlertDialogAction className="bg-red-600 text-white" onClick={() => AiPermission()}>Continue</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>:""}</div>
@@ -201,7 +223,7 @@ export default function Page() {
         
         <RagOutput query={searchQuery} setQuery={setSearchQuery} data={data} setData={setData}/>
         <DataTable data={files|| []} />
-      </div>
+      </div>}
     </div>
   )
 }

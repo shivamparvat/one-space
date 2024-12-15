@@ -243,23 +243,20 @@ class AgenticChunker:
             [
                 (
                     "system",
-                    """
-                    You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic
-                    You should generate a very brief 1-sentence summary which will inform viewers what a chunk group is about.
+                        """
+                        You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic.
+                        You should generate a very brief 1-sentence summary which will inform viewers what a chunk group is about.
 
-                    A good summary will say what the chunk is about, and give any clarifying instructions on what to add to the chunk.
+                        A good summary will say what the chunk is about, give any clarifying instructions on what to add to the chunk, and highlight any numerical details if relevant.
 
-                    You will be given a proposition which will go into a new chunk. This new chunk needs a summary.
+                        Your summaries should anticipate generalization. If you get a proposition about apples, generalize it to food. Or month, generalize it to "date and times". When the proposition involves quantities, dates, percentages, or any numbers, ensure they are reflected or emphasized in the summary.
 
-                    Your summaries should anticipate generalization. If you get a proposition about apples, generalize it to food.
-                    Or month, generalize it to "date and times".
+                        Example:
+                        Input: Proposition: Greg likes to eat 5 slices of pizza every week.
+                        Output: This chunk contains information about the types of food Greg likes to eat and the quantities he consumes weekly.
 
-                    Example:
-                    Input: Proposition: Greg likes to eat pizza
-                    Output: This chunk contains information about the types of food Greg likes to eat.
-
-                    Only respond with the new chunk summary, nothing else.
-                    """,
+                        Only respond with the new chunk summary, nothing else.
+                        """,
                 ),
                 ("user", "Determine the summary of the new chunk that this proposition will go into:\n{proposition}"),
             ]
@@ -278,23 +275,26 @@ class AgenticChunker:
             [
                 (
                     "system",
-                    """
-                    You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic
-                    You should generate a very brief few word chunk title which will inform viewers what a chunk group is about.
+                        """
+                        You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic.
+                        You should generate a very brief few-word chunk title which will inform viewers what a chunk group is about.
 
-                    A good chunk title is brief but encompasses what the chunk is about
+                        A good chunk title is brief but encompasses what the chunk is about, with particular attention to numerical details if they are present.
 
-                    You will be given a summary of a chunk which needs a title
+                        You will be given a summary of a chunk which needs a title.
 
-                    Your titles should anticipate generalization. If you get a proposition about apples, generalize it to food.
-                    Or month, generalize it to "date and times".
+                        Your titles should anticipate generalization. If you get a summary about apples, generalize it to food. If the summary includes dates, percentages, or quantities, reflect those numerical elements in the title where relevant.
 
-                    Example:
-                    Input: Summary: This chunk is about dates and times that the author talks about
-                    Output: Date & Times
+                        Example:
+                        Input: Summary: This chunk is about dates and times that the author talks about.
+                        Output: Date & Times
 
-                    Only respond with the new chunk title, nothing else.
-                    """,
+                        Example with numbers:
+                        Input: Summary: This chunk discusses annual growth rates and related percentages.
+                        Output: Growth Rates & Percentages
+
+                        Only respond with the new chunk title, nothing else.
+                        """,
                 ),
                 ("user", "Determine the title of the chunk that this summary belongs to:\n{summary}"),
             ]
@@ -480,8 +480,8 @@ async def upload_file(
         result = collection.update_one(
             {"doc_id": document_id},  # Filter by document_id
             {
-                "$push": {"chunks": {"$each": new_chunks}},  # Append new chunks to an existing array
                 "$set": {
+                    "chunks": new_chunks,
                     "filename": file_metadata.get("name", file.filename),  # Update filename
                 }
             },
@@ -506,7 +506,8 @@ async def upload_file(
 
 
 @app.post("/rank")
-async def rank_query(query: str):
+async def rank_query(query: str, user_id: str, organization: str):
+    # Debugging: Print the values received
     try:
         # Generate embedding for the query using OpenAI embeddings
         query_embedding = openai.Embedding.create(input=query, model="text-embedding-ada-002")['data'][0]['embedding']
@@ -515,7 +516,7 @@ async def rank_query(query: str):
         results = []
         
         # Iterate over documents in MongoDB
-        for doc in collection.find():
+        for doc in collection.find({user_id,organization}):
             filename = doc.get("filename")
             chunks = doc.get("chunks", [])
             

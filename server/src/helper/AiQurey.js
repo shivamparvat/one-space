@@ -1,8 +1,8 @@
 import axios from "axios";
 
-export default async function AiQurey(inputString) {
+export default async function AiQurey(inputString,user_id,organization) {
     try {
-        const url = `http://192.168.1.15:8000/rank?query=${encodeURIComponent(inputString)}`;
+        const url = `http://localhost:8000/rank?query=${encodeURIComponent(inputString)}&user_id=${user_id}&organization=${organization}`;
         const response = await axios.post(url);
         return response.data; 
     } catch (error) {

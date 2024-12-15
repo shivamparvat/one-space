@@ -1,22 +1,28 @@
 "use client";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress"; // Import your shadcn ProgressBar component
 import { Button } from "@/components/ui/button"; // Import your shadcn Button component
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import your shadcn Tabs components
 import OrganizationForm from "./components/orgeFrom";
 import ConnectedApps from "../dashboard/connect/page";
 import { useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 const SetupPage = () => {
   const router = useRouter();
+  const token = useSelector((state: RootState) => state.login.userToken);
   const [progress, setProgress] = useState(0); // Adjust progress percentage as needed
   const [activeTab, setActiveTab] = useState("organization-details");
   
 
-  const handleLogout = () => {
-    // Add logout logic here
-    // router.push('/login');
-  };
+  useEffect(() => {
+    const user  = token?.user
+    if(user?.organization){
+      setActiveTab("connect-application");
+      setProgress(50)
+    }
+  }, [token]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -38,7 +44,7 @@ const SetupPage = () => {
         <Tabs
           defaultValue="organization-details"
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={(value)=>{}}
         >
           <TabsList className="flex space-x-4">
             <TabsTrigger value="organization-details">

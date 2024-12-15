@@ -62,9 +62,8 @@ export async function GoogleCallback(req, res) {
 
     // Step 2: Create a unique channel ID and set up the webhook URL
     const channelId = `${user_id}_${organization}`;
-    const webhookUrl = `https://9c58-106-222-219-231.ngrok-free.app/api/v1/webhook/drive`; // Webhook URL to receive notifications
+    const webhookUrl = `${process.env.WEBHOOKURL}/api/v1/webhook/drive`; // Webhook URL to receive notifications
 
-    console.log(channelId);
     // Step 3: Set up the watch request on changes feed
     const watchRequest = {
       resource: {

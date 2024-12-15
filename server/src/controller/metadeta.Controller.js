@@ -38,6 +38,9 @@ export const fileMetadata = async (req, res) => {
     
 
     const connectedApps = await AppToken.find({organization, user_id});
+    if(!(connectedApps.length>0)){
+      return res.status(200).json({ success: true, data: results, message:"please connect apps", appIsEmpty:true});
+    } 
     for (const app of connectedApps) {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
@@ -50,7 +53,6 @@ export const fileMetadata = async (req, res) => {
       let cachedData = await cache.get(cacheKey);
 
       if ((cachedData || []).length > 0) {
-        console.log("cache data");
         results = [...results, ...cachedData];
       } else {
         const dbData = await Filedata.find({
@@ -62,13 +64,11 @@ export const fileMetadata = async (req, res) => {
           .limit(limit);
 
         if (dbData.length > 0) {
-          console.log("data from databse");
           results = [...results, ...dbData];
           cache.set(cacheKey, dbData, 100);
         } else {
           if (!searchQuery) {
             if (app?.state == GOOGLE_DRIVE_STR) {
-              console.log("google");
               const authClient = await authorizeGoogleDrive({
                 access_token,
                 refresh_token,

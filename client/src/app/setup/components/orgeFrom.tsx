@@ -1,12 +1,16 @@
-import { FC } from "react";
+"use client";
+
+import { FC, useState } from "react";
 import { useFormik, FormikHelpers } from "formik";
 import * as Yup from "yup";
 import { Button } from "@/components/ui/button"; // Replace with correct paths to shadcn components
 import { Input } from "@/components/ui/input"; // Replace with correct paths to shadcn components
 import { Label } from "@/components/ui/label"; // Replace with correct paths to shadcn components
 import axios from "axios";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { setToken } from "@/redux/reducer/login";
+import { useRouter } from "next/navigation";
 
 // Define form values type
 interface Address {
@@ -71,6 +75,18 @@ interface OrganizationFormProps {
 const OrganizationForm: FC<OrganizationFormProps> = ({setProgress,  setActiveTab}) => {
 
   const token = useSelector((state: RootState) => state.login.userToken);
+  const [loading, setLoading] = useState(false)
+  const dispatch = useDispatch()  
+  const router = useRouter();
+
+
+  const updateUser = async(token:any,user:any) => {
+        token.user = user
+        dispatch(setToken(token))
+  }
+
+
+
 
   const onSubmit = async (values: OrganizationFormValues, { resetForm }: FormikHelpers<OrganizationFormValues>) => {
     try {
@@ -79,16 +95,15 @@ const OrganizationForm: FC<OrganizationFormProps> = ({setProgress,  setActiveTab
         headers: {
           Authorization: `Bearer ${token?.token}`,
         }});
-      
-      // Log the response
-      console.log("Response from API:", response.data);
+      updateUser(token,response.data?.user)
       setActiveTab("connect-application")
       setProgress(50)
-      // Reset the form after successful submission
+      
       resetForm();
-    } catch (error) {
-      console.error("Error submitting the form:", error);
-      // Handle error (e.g., show a notification or alert)
+    } catch (error:any) {
+      if(error?.status == 401){
+        router.replace("/login")
+      }
     }
   };
 
@@ -97,6 +112,10 @@ const OrganizationForm: FC<OrganizationFormProps> = ({setProgress,  setActiveTab
     validationSchema: organizationValidationSchema,
     onSubmit: onSubmit,
   });
+
+
+ 
+
 
   const { values, handleChange, handleSubmit, errors, touched, handleBlur } = formik;
 

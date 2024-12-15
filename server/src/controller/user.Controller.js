@@ -120,7 +120,8 @@ export const login = async (req, res) => {
         contact_number: findUser.contact_number,
         role: findUser.role,
         is_active: findUser.is_active,
-        ai_permission: findUser.ai_permission
+        ai_permission: findUser.ai_permission,
+        organization: findUser.organization
       };
 
       const jwtToken = await signJwt(payLoad);
@@ -165,13 +166,21 @@ export const permission = async (req, res) => {
     }
 
     // Update ai_permission to true
+    await initEmbedding(req,res,true)
     user.ai_permission = true;
     await user.save();
-    initEmbedding(req,res)
     return res.status(200).json({ success: true, message: "AI permission updated successfully.", user });
   } catch (error) {
     console.error("Error updating AI permission:", error);
     return res.status(500).json({ success: false, message: "An error occurred while updating AI permission.", error });
   }
 
+}
+
+export const updatedUser = async (req, res) => {
+  try {
+    return res.status(200).json({ success: true, message: "updated user", user: req.user });
+  } catch(error) {
+    return res.status(500).json({ success: false, message: "something went wrong", error });
+  }
 }

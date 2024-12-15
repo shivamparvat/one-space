@@ -13,20 +13,30 @@ export const Embedding = async (req, res) => {
 
 export const AIsearch = async (req, res) => {
   try {
+    const user = req.user;
+    const organization = user?.organization;
+    const user_id = user?._id;
+
+
+    const connectedApps = await AppToken.find({organization, user_id});
+    if(!connectedApps){
+      return res.status(200).json({ success: true, data: results, message:"please connect apps", app:true});
+    } 
+
     const query = req?.query?.searchQuery;
-    const result = await AiQurey(query);
+    const result = await AiQurey(query,user_id,organization);
     res.status(200).json({ result });
   } catch (error) {
     res.status(500).json({ success: false, message: "search Error" + error });
   }
 };
 
-export async function initEmbedding(req, res) {
+export async function initEmbedding(req, res, permissions = false) {
   const user = req.user;
 
   const organization = user?.organization;
   const user_id = user?._id;
-  if(user?.ai_permission){
+  if(permissions || user?.ai_permission){
 
     const connectedApps = await AppToken.find({organization, user_id});
   
@@ -82,6 +92,7 @@ export async function initEmbedding(req, res) {
         }
       }
   
+      console.log("done")
       // res.write(
       //   `data: ${JSON.stringify({
       //     status: 200,
@@ -93,6 +104,8 @@ export async function initEmbedding(req, res) {
       // res.status(200)
       // res.end();
     } catch (error) {
+
+      console.log(error,"gfd")
       // res.write(
       //   `data: ${JSON.stringify({
       //     status: 500,
@@ -100,13 +113,13 @@ export async function initEmbedding(req, res) {
       //   })}\n\n`
       // );
       // res.end();
-      res
-      .status(500)
-      .json({ success: false, message: "Embedding Error"+error });
+    //   res
+    //   .status(500)
+    //   .json({ success: false, message: "Embedding Error"+error });
     }
   }else{
-    res
-    .status(401)
-    .json({ success: false, message: "Please provide AI Data Permission" });
+  //   res
+  //   .status(401)
+  //   .json({ success: false, message: "Please provide AI Data Permission" });
   }
 }

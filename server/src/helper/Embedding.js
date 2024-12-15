@@ -3,7 +3,7 @@ import { loadGoogleDriveFile } from "./metaData/drive.js";
 import FormData from 'form-data'
 
 export async function createEmbedding(auth, fileId, metaData) {
-  const RAG_URL = "http://192.168.1.15:8000/upload";
+  const RAG_URL = "http://localhost:8000/upload";
 
   try {
     // Get the file stream from Google Drive
