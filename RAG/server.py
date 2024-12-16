@@ -512,77 +512,77 @@ async def rank_query(query: str, user_id: str, organization: str):
         # Generate embedding for the query using OpenAI embeddings
         query_embedding = openai.Embedding.create(input=query, model="text-embedding-ada-002")['data'][0]['embedding']
         
-        # Perform similarity search for chunks in MongoDB by cosine similarity
-        results = []
-        
-        # Iterate over documents in MongoDB
-        for doc in collection.find({user_id,organization}):
-            filename = doc.get("filename")
-            chunks = doc.get("chunks", [])
-            
-            # Iterate over each chunk in the document
-            for chunk in chunks:
-                # Extract chunk embedding (assuming chunk embedding is stored in MongoDB)
-                embedding = np.array(chunk["embedding"])
-                
-                # Calculate cosine similarity between query and chunk embedding
-                similarity_score = np.dot(query_embedding, embedding) / (norm(query_embedding) * norm(embedding))
-                
-                # Append chunk data with similarity score to results
-                results.append({
-                    "filename": filename,
-                    "chunk_id": chunk.get("chunk_id"),
-                    "title": chunk.get("title"),
-                    "summary": chunk.get("summary"),
-                    "propositions": chunk.get("propositions"),
-                    "data": doc.get("data"),
-                    "similarity_score": similarity_score,
-                })
-        
-        # Sort results by similarity score in descending order and return top results
-        results = sorted(results, key=lambda x: x["similarity_score"], reverse=True)[:5]
-        
-        # Debugging: Log similarity scores to check what’s happening
-        print(f"Top similarity scores: {[result['similarity_score'] for result in results]}")
-        
-        # Generate a prompt for ChatGPT
-        prompt = f"""
-        **Answer the following question based on these documents. Pay special attention to the numbers, rates, and financial details:**
+        # Query MongoDB
+        query_filter = {"user_id": user_id, "organization": organization}
+        documents = collection.find(query_filter)
 
-        ### Question: {query}
-        """
-        
-        # Add chunk content to the prompt
-        for i, result in enumerate(results, start=1):
-            prompt += f"""
-        ### Document {i}:
-        **Filename:** {result['filename']}
-        **Title:** {result['title']}
-        **Summary:** {result['summary']}
-        **Propositions:** {result['propositions']}
-        """
-            
-        prompt += """
-        ### Provide a concise answer to the question based on the information above in Markdown format.
-        """
-        
-        # Get response from ChatGPT
-        chat_response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": prompt}
-            ]
-        )
+        # Check if documents exist
+        if collection.count_documents(query_filter) > 0:
+            results = []
 
-        # Retrieve and return the answer from ChatGPT
-        answer = chat_response.choices[0].message["content"]
-        
-        return {"query": query, "answer": answer, "results": results}
-    
+            # Iterate over documents in MongoDB
+            for doc in documents:
+                filename = doc.get("filename")
+                chunks = doc.get("chunks", [])
+                
+                for chunk in chunks:
+                    # Skip invalid chunks
+                    if not isinstance(chunk.get("embedding"), list):
+                        continue
+
+                    # Calculate similarity score
+                    embedding = np.array(chunk["embedding"])
+                    similarity_score = np.dot(query_embedding, embedding) / (norm(query_embedding) * norm(embedding))
+                    
+                    # Append result
+                    results.append({
+                        "filename": filename,
+                        "chunk_id": chunk.get("chunk_id"),
+                        "title": chunk.get("title"),
+                        "summary": chunk.get("summary"),
+                        "propositions": chunk.get("propositions"),
+                        "data": doc.get("data"),
+                        "similarity_score": similarity_score,
+                    })
+
+            # Sort and return results
+            results = sorted(results, key=lambda x: x["similarity_score"], reverse=True)[:5]
+            if not results:
+                raise HTTPException(status_code=404, detail="No relevant chunks found.")
+            
+            # Generate ChatGPT prompt
+            prompt = f"""
+            **Answer the following question based on these documents. Pay special attention to the numbers, rates, and financial details:**
+
+            ### Question: {query}
+            """
+            for i, result in enumerate(results, start=1):
+                prompt += f"""
+                ### Document {i}:
+                **Filename:** {result['filename']}
+                **Title:** {result['title']}
+                **Summary:** {result['summary']}
+                **Propositions:** {result['propositions']}
+                """
+            prompt += """
+            ### Provide a concise answer to the question based on the information above in Markdown format.
+            """
+
+            # Get ChatGPT response
+            chat_response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            answer = chat_response.choices[0].message["content"]
+
+            return {"query": query, "answer": answer, "results": results}
+        else:
+            raise HTTPException(status_code=404, detail="Data Not Found")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

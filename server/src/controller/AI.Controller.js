@@ -7,6 +7,7 @@ import AppToken from "../Schema/apptoken.js";
 import AiQurey from "../helper/AiQurey.js";
 import { DROPBOX_STR, GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
 
+
 export const Embedding = async (req, res) => {
   initEmbedding(req, res);
 };
@@ -31,6 +32,9 @@ export const AIsearch = async (req, res) => {
   }
 };
 
+
+
+
 export async function initEmbedding(req, res, permissions = false) {
   const user = req.user;
 
@@ -39,10 +43,6 @@ export async function initEmbedding(req, res, permissions = false) {
   if(permissions || user?.ai_permission){
 
     const connectedApps = await AppToken.find({organization, user_id});
-  
-    // res.setHeader("Content-Type", "text/event-stream");
-    // res.setHeader("Cache-Control", "no-cache");
-    // res.setHeader("Connection", "keep-alive");
   
     try {
       for (const app of connectedApps) {
@@ -71,55 +71,38 @@ export async function initEmbedding(req, res, permissions = false) {
               fileId,
               file
             );
-            console.log(embeddingResult?.response)
   
-            // if (!embeddingResult.success) {
-            //   throw new Error(
-            //     `Failed to create embedding for file ID: ${fileId}`
-            //   );
-            // }
+            if (!embeddingResult.success) {
+              throw new Error(
+                `Failed to create embedding for file ID: ${fileId}`
+              ); 
+            }
   
-            // const progress = Math.round(((index + 1) / totalFiles) * 100);
+            const progress = Math.round(((index + 1) / totalFiles) * 100);
   
-            // res.write(
-            //   `data: ${JSON.stringify({ fileId, progress: `${progress}%` })}\n\n`
-            // );
-            // res.status(200)
+            res.write(
+              `data: ${JSON.stringify({ fileId,name: file?.name, progress:progress,status:200})}\n\n`
+            );
           }
         }
         else if(app?.state === DROPBOX_STR){
           
         }
       }
-  
-      console.log("done")
-      // res.write(
-      //   `data: ${JSON.stringify({
-      //     status: 200,
-      //     message: "All embeddings created successfully",
-      //     overallProgress: "100%",
-      //   })}\n\n`
-      // );
-  
-      // res.status(200)
-      // res.end();
     } catch (error) {
-
-      console.log(error,"gfd")
-      // res.write(
-      //   `data: ${JSON.stringify({
-      //     status: 500,
-      //     message: error.message || "An error occurred while creating embeddings",
-      //   })}\n\n`
-      // );
-      // res.end();
-    //   res
-    //   .status(500)
-    //   .json({ success: false, message: "Embedding Error"+error });
+      res.write(
+        `data: ${JSON.stringify({
+          status: 500,
+          message: error.message || "An error occurred while creating embeddings",
+        })}\n\n`
+      );
     }
   }else{
-  //   res
-  //   .status(401)
-  //   .json({ success: false, message: "Please provide AI Data Permission" });
+    res.write(
+      `data: ${JSON.stringify({
+        status: 401,
+        message: "Please provide AI Data Permission",
+      })}\n\n`
+    );
   }
 }

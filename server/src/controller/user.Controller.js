@@ -152,30 +152,69 @@ export const login = async (req, res) => {
 
 export const permission = async (req, res) => {
   try {
-    const userDetails = req.user
-    const userId = userDetails?._id
+    // Set up the SSE headers
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const userDetails = req.user;
+    const userId = userDetails?._id;
+
+    // Notify client: Starting the process
+    res.write(`data: ${JSON.stringify({ status: "info", message: "Initializing permission check..." })}\n\n`);
+
     // Find the user and check their current ai_permission status
     const user = await User.findById(userId);
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found." });
+      res.write(`data: ${JSON.stringify({ success: false, message: "User not found." })}\n\n`);
+      res.end();
+      return;
     }
 
     if (user.ai_permission) {
-      return res.status(400).json({ success: false, message: "AI permission is already enabled." });
+      res.write(`data: ${JSON.stringify({ success: false, message: "AI permission is already enabled." })}\n\n`);
+      res.end();
+      return;
     }
 
+    // Notify client: Updating permission
+    res.write(`data: ${JSON.stringify({ status: "info", message: "Updating AI permissions..." })}\n\n`);
+
+    // Call the initEmbedding function and pass streaming updates
+    await initEmbedding(req, res, true);
+
     // Update ai_permission to true
-    await initEmbedding(req,res,true)
-    user.ai_permission = true;
-    await user.save();
-    return res.status(200).json({ success: true, message: "AI permission updated successfully.", user });
+    // user.ai_permission = true;
+    // await user.save();
+
+    // Notify client: Permission updated successfully
+    res.write(
+      `data: ${JSON.stringify({
+        success: true,
+        message: "AI permission updated successfully.",
+        user,
+      })}\n\n`
+    );
+
+    // Close the SSE connection
+    res.end();
   } catch (error) {
     console.error("Error updating AI permission:", error);
-    return res.status(500).json({ success: false, message: "An error occurred while updating AI permission.", error });
-  }
 
-}
+    // Notify client: Error occurred
+    res.write(
+      `data: ${JSON.stringify({
+        success: false,
+        message: "An error occurred while updating AI permission.",
+        error: error.message,
+      })}\n\n`
+    );
+
+    res.end();
+  }
+};
+
 
 export const updatedUser = async (req, res) => {
   try {

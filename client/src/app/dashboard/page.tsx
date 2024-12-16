@@ -22,6 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation"
+import { Progress } from "@/components/ui/progress";
 
 export interface RagOutputType {
   query: string;
@@ -36,6 +37,7 @@ export default function Page() {
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [eventData, setEventData] = useState<any>()
   const token = useSelector((state: RootState) => state.login.userToken);
   const [aiToggle, setAiToggle] = useState(false)
   const [connectedApp, setConnectedApp] = useState(true)
@@ -104,6 +106,7 @@ export default function Page() {
     }
   };
 
+  console.log(eventData,error)
   function onSearch(){
     setData(null)
     // setFiles([])
@@ -129,27 +132,85 @@ export default function Page() {
 
 
 
-  const AiPermission = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(process.env.NEXT_PUBLIC_BASE_URL+`/api/v1/user/permission`, {
-        headers: {
-          Authorization: `Bearer ${token?.token}`,
-        },
-      });
-    } catch (error:any) {
-      setData(null);
-      if(error?.status == 401){
-        router.replace("/login")
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const AiPermission = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await axios.get(process.env.NEXT_PUBLIC_BASE_URL+`/api/v1/user/permission`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token?.token}`,
+  //       },
+  //     });
+  //   } catch (error:any) {
+  //     setData(null);
+  //     if(error?.status == 401){
+  //       router.replace("/login")
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
+
+  const AiPermission = () => {
+    
+    const tokenString = token?.token; // Ensure your token is accessible
+    if (!tokenString) {
+      router.replace("/login");
+      return;
+    }
+  
+    // Start the SSE connection
+    const eventSource = new EventSource(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/user/permission?token=${tokenString}`
+    );
+  
+    eventSource.onopen = () => {
+      console.log("SSE connection established.");
+    };
+  
+    eventSource.onmessage = (event) => {
+      const response = JSON.parse(event.data);
+
+      console.log(response)
+      if (response.status === 200) {
+        console.log("Permission granted:", response.progress);
+        setEventData(response); // Update state with response data
+      } else if (response.status === 401) {
+        console.log("Unauthorized:", response.message);
+        router.replace("/login");
+        eventSource.close();
+      }
+    };
+  
+    eventSource.onerror = (error) => {
+      console.error("SSE Error:", error);
+      setEventData(null); // Reset data on error
+      eventSource.close();
+    };
+  
+    // Close the SSE connection after use
+    return () => {
+      eventSource.close();
+      setLoading(false);
+    };
+  };
+  
 
   return (
     <div className="flex-col md:flex">
+      <div className="flex justify-center items-center w-full">
+     {eventData && 
+     <div className="w-full">
+        <Progress value={eventData?.progress} />
+        <p className="text-xs leading-none text-muted-foreground mt-2 text-left">
+          {eventData?.name}
+        </p>
+        <p className="text-xs font-medium leading-none text-left">
+          {eventData?.fileId}
+        </p>
+      </div>}
+    </div>
+
      {connectedApp ?<div className="flex justify-center items-center h-[80vh]">
           <div>
              <Button onClick={()=>router.push("/dashboard/connect")}>Connect APPS</Button>
@@ -159,7 +220,7 @@ export default function Page() {
         <div className="flex-col items-center justify-between space-y-2 md:flex md:flex-row">
           <div><h2 className="text-3xl font-bold tracking-tight">Access Control</h2></div>
           <div>{!(token?.user?.ai_permission || false)? <AlertDialog>
-            <AlertDialogTrigger><Button variant="secondary">USE AI</Button></AlertDialogTrigger>
+            <AlertDialogTrigger><Button variant="secondary">USE AI {eventData?.progress}</Button></AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

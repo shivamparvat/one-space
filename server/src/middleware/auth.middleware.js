@@ -2,15 +2,16 @@ import JWT from "jsonwebtoken";
 import User from "../Schema/userSchema.js";
 
 export const authMiddleware = async (req, res, next) => {
-  const { authorization } = req.headers;
-
+  let { authorization } = req.headers;
+  authorization = authorization;
+  const queryToken = req.query.token;
   // Check if the Authorization header is present
-  if (!authorization) {
+  if (!queryToken && !authorization) {
     return res.status(401).json({ error: "Authorization header is missing" });
   }
 
   // Extract the token from the header
-  const token = authorization.split(" ")[1];
+  const token = (authorization || "").split(" ")[1] || queryToken;
   if (!token) {
     return res.status(401).json({ error: "Token is missing" });
   }
@@ -32,7 +33,6 @@ export const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: "Token has expired" });
     }
 
-
     // Find the user in the database for validation
     const user = await User.findById(authData?.user_id);
     if (!user) {
@@ -47,18 +47,16 @@ export const authMiddleware = async (req, res, next) => {
     next();
   } catch (err) {
     // Handle any errors during token verification or user retrieval
-    return res.status(403).json({ error: "Unauthorized access", details: err.message });
+    return res
+      .status(403)
+      .json({ error: "Unauthorized access", details: err.message });
   }
 };
 
-
-
-
-export  const fetchUserByToken = async (res, token)=>{
+export const fetchUserByToken = async (res, token) => {
   if (!token) {
     return res.status(401).json({ error: "Authorization header is missing" });
   }
-
 
   try {
     // Decode and verify the token
@@ -77,19 +75,16 @@ export  const fetchUserByToken = async (res, token)=>{
       return res.status(401).json({ error: "Token has expired" });
     }
 
-
     // Find the user in the database for validation
     const user = await User.findById(authData?.user_id);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-      return user
-    
+    return user;
   } catch (error) {
     const user = await User.findById(authData?.user_id);
     if (!user) {
       return res.status(404).json({ error: "something went wrong" });
     }
-    
   }
-}
+};
