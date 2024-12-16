@@ -2,7 +2,7 @@ import axios from "axios";
 import { loadGoogleDriveFile } from "./metaData/drive.js";
 import FormData from 'form-data'
 
-export async function createEmbedding(auth, fileId, metaData) {
+export async function createEmbedding(auth, fileId) {
   const RAG_URL = `http://${process.env.RAG_HOST}:8000/upload`;
 
   try {
