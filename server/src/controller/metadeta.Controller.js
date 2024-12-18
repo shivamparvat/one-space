@@ -76,7 +76,7 @@ export const fileMetadata = async (req, res) => {
                 token_type,
                 expiry_date,
               });
-              const files = await listGoogleDriveFiles(authClient, 10);
+              const files = await listGoogleDriveFiles(authClient, 20);
               const fileDataToInsert = files.map((file) => {
                 return {
                   doc_id: file.id,

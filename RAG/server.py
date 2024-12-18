@@ -12,10 +12,9 @@ import os
 import uuid
 import numpy as np
 import uvicorn
-from gensim.utils import simple_preprocess
 from scipy.linalg import norm
 from docx import Document
-import fitz  # PyMuPDF for PDFs
+import fitz  
 from PIL import Image
 import io
 import json
@@ -47,8 +46,13 @@ async def health_check():
     return {"status": "ok", "message": "Service is running"}
 
 def preprocess_text(text):
-    """Preprocess text using Gensim's simple preprocessing for basic cleaning."""
-    return " ".join(simple_preprocess(text))
+    """Normalize text without removing special characters."""
+    # Convert to lowercase to ensure uniformity
+    normalized_text = text.lower()
+    # Replace multiple spaces with a single space
+    normalized_text = " ".join(normalized_text.split())
+    return normalized_text
+
 
 def extract_text_from_file(file: UploadFile):
     """Extract text based on file type."""
@@ -481,8 +485,8 @@ async def upload_file(
         result = collection.update_one(
             {"doc_id": document_id},  # Filter by document_id
             {
-                "$push": {"chunks": {"$each": new_chunks}},  # Append new chunks to an existing array
                 "$set": {
+                    "chunks": new_chunks,
                     "filename": file_metadata.get("name", file.filename),  # Update filename
                 }
             },
@@ -519,7 +523,6 @@ async def rank_query(query: str, user_id: str, organization: str):
         # Check if documents exist
         if collection.count_documents(query_filter) > 0:
             results = []
-            print("sgfhfdkjg hfdkjgh fdkjg hfkd jh g")
             # Iterate over documents in MongoDB
             for doc in documents:
                 filename = doc.get("filename")
