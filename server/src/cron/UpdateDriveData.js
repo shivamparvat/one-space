@@ -74,6 +74,7 @@ async function listChanges(auth, drive, startPageToken, user) {
                             user_id,
                             data: fileMetadata,
                         })
+                        console.log("createEmbedding")
                           await createEmbedding(auth, id)
                     } else {
                         console.log("old file")
@@ -89,6 +90,7 @@ async function listChanges(auth, drive, startPageToken, user) {
                       }
                       if (fileMetadata.md5Checksum !== previousMetadata.md5Checksum || fileMetadata?.size == previousMetadata?.size) {
                         await createEmbedding(auth, id)
+                        console.log("createEmbedding")
                       }
                     }
           

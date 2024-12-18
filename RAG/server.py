@@ -20,6 +20,7 @@ from PIL import Image
 import io
 import json
 import re
+from bson import ObjectId
 
 
 load_dotenv()
@@ -243,20 +244,23 @@ class AgenticChunker:
             [
                 (
                     "system",
-                        """
-                        You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic.
-                        You should generate a very brief 1-sentence summary which will inform viewers what a chunk group is about.
+                    """
+                    You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic
+                    You should generate a very brief 1-sentence summary which will inform viewers what a chunk group is about.
 
-                        A good summary will say what the chunk is about, give any clarifying instructions on what to add to the chunk, and highlight any numerical details if relevant.
+                    A good summary will say what the chunk is about, and give any clarifying instructions on what to add to the chunk.
 
-                        Your summaries should anticipate generalization. If you get a proposition about apples, generalize it to food. Or month, generalize it to "date and times". When the proposition involves quantities, dates, percentages, or any numbers, ensure they are reflected or emphasized in the summary.
+                    You will be given a proposition which will go into a new chunk. This new chunk needs a summary.
 
-                        Example:
-                        Input: Proposition: Greg likes to eat 5 slices of pizza every week.
-                        Output: This chunk contains information about the types of food Greg likes to eat and the quantities he consumes weekly.
+                    Your summaries should anticipate generalization. If you get a proposition about apples, generalize it to food.
+                    Or month, generalize it to "date and times".
 
-                        Only respond with the new chunk summary, nothing else.
-                        """,
+                    Example:
+                    Input: Proposition: Greg likes to eat pizza
+                    Output: This chunk contains information about the types of food Greg likes to eat.
+
+                    Only respond with the new chunk summary, nothing else.
+                    """,
                 ),
                 ("user", "Determine the summary of the new chunk that this proposition will go into:\n{proposition}"),
             ]
@@ -275,26 +279,23 @@ class AgenticChunker:
             [
                 (
                     "system",
-                        """
-                        You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic.
-                        You should generate a very brief few-word chunk title which will inform viewers what a chunk group is about.
+                    """
+                    You are the steward of a group of chunks which represent groups of sentences that talk about a similar topic
+                    You should generate a very brief few word chunk title which will inform viewers what a chunk group is about.
 
-                        A good chunk title is brief but encompasses what the chunk is about, with particular attention to numerical details if they are present.
+                    A good chunk title is brief but encompasses what the chunk is about
 
-                        You will be given a summary of a chunk which needs a title.
+                    You will be given a summary of a chunk which needs a title
 
-                        Your titles should anticipate generalization. If you get a summary about apples, generalize it to food. If the summary includes dates, percentages, or quantities, reflect those numerical elements in the title where relevant.
+                    Your titles should anticipate generalization. If you get a proposition about apples, generalize it to food.
+                    Or month, generalize it to "date and times".
 
-                        Example:
-                        Input: Summary: This chunk is about dates and times that the author talks about.
-                        Output: Date & Times
+                    Example:
+                    Input: Summary: This chunk is about dates and times that the author talks about
+                    Output: Date & Times
 
-                        Example with numbers:
-                        Input: Summary: This chunk discusses annual growth rates and related percentages.
-                        Output: Growth Rates & Percentages
-
-                        Only respond with the new chunk title, nothing else.
-                        """,
+                    Only respond with the new chunk title, nothing else.
+                    """,
                 ),
                 ("user", "Determine the title of the chunk that this summary belongs to:\n{summary}"),
             ]
@@ -480,8 +481,8 @@ async def upload_file(
         result = collection.update_one(
             {"doc_id": document_id},  # Filter by document_id
             {
+                "$push": {"chunks": {"$each": new_chunks}},  # Append new chunks to an existing array
                 "$set": {
-                    "chunks": new_chunks,
                     "filename": file_metadata.get("name", file.filename),  # Update filename
                 }
             },
@@ -507,19 +508,18 @@ async def upload_file(
 
 @app.post("/rank")
 async def rank_query(query: str, user_id: str, organization: str):
-    # Debugging: Print the values received
     try:
         # Generate embedding for the query using OpenAI embeddings
         query_embedding = openai.Embedding.create(input=query, model="text-embedding-ada-002")['data'][0]['embedding']
         
-        # Query MongoDB
-        query_filter = {"user_id": user_id, "organization": organization}
+        # Perform similarity search for chunks in MongoDB by cosine similarity
+        query_filter = {"user_id": ObjectId(user_id),"organization": ObjectId(organization)}
         documents = collection.find(query_filter)
-
+        
         # Check if documents exist
         if collection.count_documents(query_filter) > 0:
             results = []
-
+            print("sgfhfdkjg hfdkjgh fdkjg hfkd jh g")
             # Iterate over documents in MongoDB
             for doc in documents:
                 filename = doc.get("filename")
@@ -549,26 +549,56 @@ async def rank_query(query: str, user_id: str, organization: str):
             results = sorted(results, key=lambda x: x["similarity_score"], reverse=True)[:5]
             if not results:
                 raise HTTPException(status_code=404, detail="No relevant chunks found.")
+            filename = doc.get("filename")
+            chunks = doc.get("chunks", [])
             
-            # Generate ChatGPT prompt
+            # Iterate over each chunk in the document
+            for chunk in chunks:
+                # Extract chunk embedding (assuming chunk embedding is stored in MongoDB)
+                embedding = np.array(chunk["embedding"])
+                
+                # Calculate cosine similarity between query and chunk embedding
+                similarity_score = np.dot(query_embedding, embedding) / (norm(query_embedding) * norm(embedding))
+                
+                # Append chunk data with similarity score to results
+                results.append({
+                    "filename": filename,
+                    "chunk_id": chunk.get("chunk_id"),
+                    "title": chunk.get("title"),
+                    "summary": chunk.get("summary"),
+                    "propositions": chunk.get("propositions"),
+                    "data": doc.get("data"),
+                    "similarity_score": similarity_score,
+                })
+        
+            # Sort results by similarity score in descending order and return top results
+            results = sorted(results, key=lambda x: x["similarity_score"], reverse=True)[:5]
+            
+            # Debugging: Log similarity scores to check what’s happening
+            print(f"Top similarity scores: {[result['similarity_score'] for result in results]}")
+            
+            # Generate a prompt for ChatGPT
             prompt = f"""
             **Answer the following question based on these documents. Pay special attention to the numbers, rates, and financial details:**
-
+    
             ### Question: {query}
             """
+            
+            # Add chunk content to the prompt
             for i, result in enumerate(results, start=1):
                 prompt += f"""
-                ### Document {i}:
-                **Filename:** {result['filename']}
-                **Title:** {result['title']}
-                **Summary:** {result['summary']}
-                **Propositions:** {result['propositions']}
-                """
+            ### Document {i}:
+            **Filename:** {result['filename']}
+            **Title:** {result['title']}
+            **Summary:** {result['summary']}
+            **Propositions:** {result['propositions']}
+            """
+                
             prompt += """
             ### Provide a concise answer to the question based on the information above in Markdown format.
             """
-
-            # Get ChatGPT response
+            
+            # Get response from ChatGPT
             chat_response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
@@ -576,13 +606,15 @@ async def rank_query(query: str, user_id: str, organization: str):
                     {"role": "user", "content": prompt}
                 ]
             )
+    
+            # Retrieve and return the answer from ChatGPT
             answer = chat_response.choices[0].message["content"]
-
+            
             return {"query": query, "answer": answer, "results": results}
-        else:
-            raise HTTPException(status_code=404, detail="Data Not Found")
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
