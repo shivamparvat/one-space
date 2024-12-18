@@ -23,6 +23,7 @@
     "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.7.2",
+    "node-cron": "^3.0.3",
     "redis": "^4.7.0"
   },
   "devDependencies": {
