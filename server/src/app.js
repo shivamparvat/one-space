@@ -10,6 +10,8 @@ import AIRouter from './Routes/AI.routes.js';
 import imageCache from './utils/imageCache.js';
 import userRouter from "./Routes/user.routes.js"
 import orgRouter from "./Routes/org.routes.js"
+import cron from 'node-cron';
+import {UpdateDriveData} from './cron/UpdateDriveData.js';
 // import { registerDriveWatch } from './events/driveEvents.js';
 
 const app = express();
@@ -33,6 +35,9 @@ app.use("/api/v1/ai", AIRouter)
 app.use("/api/v1/user", userRouter)
 
 
+cron.schedule('2 * * * * *', () => {
+  UpdateDriveData()
+});
 // app.use('/api', googleDriveRoutes);
 
 // app.use("/api/v1/watch/watch", registerDriveWatch)

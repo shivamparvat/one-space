@@ -12,7 +12,6 @@ const AuthUrlRouter = express.Router();
 AuthUrlRouter.get("/google", GoogleAuthUrl);
 AuthUrlRouter.get("/google/callback", GoogleCallback);
 
-
 AuthUrlRouter.get("/dropbox", DropboxAuthUrl);
 AuthUrlRouter.get("/dropbox/callback", DropboxCallback);
 

@@ -104,7 +104,6 @@ export const driveWebhook = async (req, res) => {
 };
 async function getPreviousMetadata(ResourceID) {
   const prefile = await Filedata.find({ doc_id: ResourceID })
-  console.log(prefile)
   return prefile?.data
 }
 
