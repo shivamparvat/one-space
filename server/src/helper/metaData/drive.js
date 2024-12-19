@@ -14,7 +14,7 @@ export function authorizeGoogleDrive(token) {
   }
   
 
-export function listGoogleDriveFiles(auth,pageSize=10) {
+export function listGoogleDriveFiles(auth,pageSize=1000) {
   return new Promise((resolve, reject) => {
     const drive = google.drive({ version: "v3", auth });
     drive.files.list(

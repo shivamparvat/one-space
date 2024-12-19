@@ -8,4 +8,12 @@ gensim
 python-docx
 pillow
 pymupdf
-langchain-core 
+langchain-core
+openpyxl
+tiktoken
+lxml
+beautifulsoup4
+openpyxl
+Pillow
+fitz
+openpyxl

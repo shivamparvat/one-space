@@ -20,7 +20,9 @@ import io
 import json
 import re
 from bson import ObjectId
-
+import openpyxl
+from lxml import etree
+from bs4 import BeautifulSoup
 
 load_dotenv()
 
@@ -77,13 +79,47 @@ def extract_text_from_file(file: UploadFile):
         text = "\n".join([para.text for para in doc.paragraphs])
         return text
 
+    elif mime_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" or filename.endswith(".xlsx"):
+        workbook = openpyxl.load_workbook(io.BytesIO(file_content))
+        text = ""
+        # Extract text from each sheet and each row
+        for sheet in workbook.sheetnames:
+            worksheet = workbook[sheet]
+            for row in worksheet.iter_rows(values_only=True):
+                text += " ".join([str(cell) if cell is not None else "" for cell in row]) + "\n"
+        return text
+    # Handle JavaScript (JS) files as plain text
+    elif mime_type == "text/javascript" or filename.endswith(".js"):
+        return file_content.decode('utf-8')
+
+    # Handle HTML files (use BeautifulSoup for parsing)
+    elif mime_type == "text/html" or filename.endswith(".html"):
+        soup = BeautifulSoup(file_content, "html.parser")
+        return soup.get_text()
+
+    # Handle XML files (use lxml for parsing)
+    elif mime_type == "application/xml" or filename.endswith(".xml"):
+        try:
+            tree = etree.fromstring(file_content)
+            return etree.tostring(tree, pretty_print=True, encoding="unicode")
+        except etree.XMLSyntaxError as e:
+            return f"XML parsing error: {e}"
+
+    # Handle JSON files
+    elif mime_type == "application/json" or filename.endswith(".json"):
+        try:
+            json_data = json.loads(file_content.decode('utf-8'))
+            return json.dumps(json_data, indent=4)  # pretty print the JSON
+        except json.JSONDecodeError as e:
+            raise ValueError(f"JSON parsing error: {e}")
+
     elif mime_type.startswith("image/") or filename.endswith((".jpg", ".jpeg", ".png")):
         image = Image.open(io.BytesIO(file_content))
         # OCR processing (if necessary) can be added here
         return "Image text processing is not implemented in this example"
 
     else:
-        raise ValueError(f"Unsupported file type: {mime_type}")
+        return f"Unsupported file type: {mime_type}"
 
 class AgenticChunker:
     def __init__(self, openai_api_key=None):
@@ -513,8 +549,9 @@ async def upload_file(
 @app.post("/rank")
 async def rank_query(query: str, user_id: str, organization: str):
     try:
+        processed_text = preprocess_text(query)
         # Generate embedding for the query using OpenAI embeddings
-        query_embedding = openai.Embedding.create(input=query, model="text-embedding-ada-002")['data'][0]['embedding']
+        query_embedding = openai.Embedding.create(input=processed_text, model="text-embedding-ada-002")['data'][0]['embedding']
         
         # Perform similarity search for chunks in MongoDB by cosine similarity
         query_filter = {"user_id": ObjectId(user_id),"organization": ObjectId(organization)}
@@ -600,8 +637,8 @@ async def rank_query(query: str, user_id: str, organization: str):
             prompt += """
             ### Provide a concise answer to the question based on the information above in Markdown format.
             """
-            
-            # Get response from ChatGPT
+            print(prompt, "prompt")
+            # Get response from ChatGPT,""
             chat_response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
