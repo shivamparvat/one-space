@@ -45,9 +45,9 @@ export const fileMetadata = async (req, res) => {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
 
-      const mainCache = `file_${user_id}_${organization}`;
+      const mainCache = `file_${user_id}_${organization}_${page}_${limit}`;
       const cacheKey = searchQuery
-        ? `file_${user_id}_${organization}_${searchQuery}`
+        ? `file_${user_id}_${organization}_${searchQuery}_${page}_${limit}`
         : mainCache;
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
@@ -76,7 +76,7 @@ export const fileMetadata = async (req, res) => {
                 token_type,
                 expiry_date,
               });
-              const files = await listGoogleDriveFiles(authClient, 20);
+              const files = await listGoogleDriveFiles(authClient, 100);
               const fileDataToInsert = files.map((file) => {
                 return {
                   doc_id: file.id,

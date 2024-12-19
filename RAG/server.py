@@ -496,9 +496,11 @@ async def upload_file(
 
         # Preprocess the extracted text (e.g., remove unwanted characters, format)
         processed_text = preprocess_text(raw_text)
-
+        filename = file_metadata.get("name", file.filename)
+        combined_text = f"Filename: {filename}\n{raw_text}"
+        
         # Split the processed text into propositions
-        propositions = text_splitter.split_text(processed_text)
+        propositions = text_splitter.split_text(combined_text)
 
         # Add each proposition to the AgenticChunker
         agentic_chunker.add_propositions(propositions)
@@ -625,7 +627,7 @@ async def rank_query(query: str, user_id: str, organization: str):
             """
             
             # Add chunk content to the prompt
-            for i, result in enumerate(results, start=1):
+            for i, result in enumerate(results[:3], start=1):
                 prompt += f"""
             ### Document {i}:
             **Filename:** {result['filename']}
@@ -639,19 +641,23 @@ async def rank_query(query: str, user_id: str, organization: str):
             """
             print(prompt, "prompt")
             # Get response from ChatGPT,""
-            chat_response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
+            try:
+                chat_response = openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful assistant."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                answer = chat_response.choices[0].message["content"]
+                
+                return {"query": query, "answer": answer, "results": results}
+        
+            except openai.error.OpenAIError as e:
+                print(f"Error: {e}")
+          
     
             # Retrieve and return the answer from ChatGPT
-            answer = chat_response.choices[0].message["content"]
-            
-            return {"query": query, "answer": answer, "results": results}
-    
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

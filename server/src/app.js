@@ -35,9 +35,9 @@ app.use("/api/v1/ai", AIRouter)
 app.use("/api/v1/user", userRouter)
 
 
-cron.schedule('5 10 * * * *', () => {
-  UpdateDriveData()
-});
+// cron.schedule('5 10 * * * *', () => {
+//   UpdateDriveData()
+// });
 // app.use('/api', googleDriveRoutes);
 
 // app.use("/api/v1/watch/watch", registerDriveWatch)

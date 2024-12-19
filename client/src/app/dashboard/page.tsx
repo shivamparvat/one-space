@@ -46,7 +46,7 @@ export default function Page() {
     
   const fetchFiles = async (searchStr:string) => {
         try {
-          const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/list?search=${searchStr}`,{}, {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/file/list?search=${searchStr}&page=1&limit=1000`,{}, {
             headers: {
               Authorization: `Bearer ${token?.token}`,
             },
