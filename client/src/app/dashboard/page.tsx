@@ -220,7 +220,7 @@ export default function Page() {
         <div className="flex-col items-center justify-between space-y-2 md:flex md:flex-row">
           <div><h2 className="text-3xl font-bold tracking-tight">Access Control</h2></div>
           <div>{!(token?.user?.ai_permission || false)? <AlertDialog>
-            <AlertDialogTrigger><Button variant="secondary">USE AI {eventData?.progress}</Button></AlertDialogTrigger>
+            <AlertDialogTrigger><Button variant="secondary">USE AI {eventData?.progress?eventData?.progress + "%":""} </Button></AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
