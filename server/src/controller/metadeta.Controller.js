@@ -35,12 +35,16 @@ export const fileMetadata = async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
-    
 
-    const connectedApps = await AppToken.find({organization, user_id});
-    if(!(connectedApps.length>0)){
-      return res.status(200).json({ success: true, data: results, message:"please connect apps", appIsEmpty:true});
-    } 
+    const connectedApps = await AppToken.find({ organization, user_id });
+    if (!(connectedApps.length > 0)) {
+      return res.status(200).json({
+        success: true,
+        data: results,
+        message: "please connect apps",
+        appIsEmpty: true,
+      });
+    }
     for (const app of connectedApps) {
       const { access_token, refresh_token, scope, token_type, expiry_date } =
         app;
@@ -59,6 +63,7 @@ export const fileMetadata = async (req, res) => {
           organization,
           user_id,
           ...searchFilter,
+          "data.trashed":false
         })
           .skip(skip)
           .limit(limit);
@@ -79,17 +84,35 @@ export const fileMetadata = async (req, res) => {
               const files = await listGoogleDriveFiles(authClient, 100);
               const fileDataToInsert = files.map((file) => {
                 return {
-                  doc_id: file.id,
-                  user_id,
-                  organization,
-                  data: file,
+                  updateOne: {
+                    filter: { doc_id: file.id, user_id, organization },
+                    update: {
+                      $set: {
+                        doc_id: file.id,
+                        user_id,
+                        organization,
+                        data: file,
+                      },
+                    },
+                    upsert: true, // Insert a new document if no match is found
+                  },
                 };
               });
-              const resdb = await Filedata.insertMany(fileDataToInsert);
+              const resdb = await Filedata.bulkWrite(fileDataToInsert);
 
-              cache.set(cacheKey, fileDataToInsert, 100);
-
-              results = [...results, ...fileDataToInsert];
+              const dbData = await Filedata.find({
+                organization,
+                user_id,
+                ...searchFilter,
+                "data.trashed":false
+              })
+                .skip(skip)
+                .limit(limit);
+                
+              if (dbData.length > 0) {
+                results = [...results, ...dbData];
+                cache.set(cacheKey, dbData, 100);
+              }
             } else if (app?.state == DROPBOX_STR) {
               const { dbx } = await initializeDropbox({
                 accessToken: access_token,
@@ -145,26 +168,28 @@ export const autocomplete = async (req, res) => {
 
   try {
     // Search in FileData for matching filenames
-    const fileDataResults = await Filedata.find({ filename: { $regex: query, $options: 'i' },
+    const fileDataResults = await Filedata.find({
+      filename: { $regex: query, $options: "i" },
       user_id,
-      organization, })
+      organization,
+      "data.trashed":false
+    })
       .select("filename")
-      .limit(5) 
+      .limit(5)
       .exec();
 
     // Search in Search for user's previous search history
-    const searchResults = await Search.find({ query: { $regex: query, $options: 'i' },
+    const searchResults = await Search.find({
+      query: { $regex: query, $options: "i" },
       user_id,
-      organization, })
+      organization,
+    })
       .select("query")
       .limit(5) // Limit the number of results
       .exec();
 
     // Combine both results (FileData and Search) into a single response
-    const combinedResults = [
-      ...fileDataResults,
-      ...searchResults
-    ];
+    const combinedResults = [...fileDataResults, ...searchResults];
 
     // Return the combined recommendations
     res.json({

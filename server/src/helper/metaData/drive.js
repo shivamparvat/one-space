@@ -17,10 +17,12 @@ export function authorizeGoogleDrive(token) {
 export function listGoogleDriveFiles(auth,pageSize=1000) {
   return new Promise((resolve, reject) => {
     const drive = google.drive({ version: "v3", auth });
+    const query = '("me" in owners or sharedWithMe = true) and trashed = false and mimeType != "application/vnd.google-apps.shortcut"';
     drive.files.list(
       {
         pageSize: pageSize,
         fields: "files(*)",
+        // q: query,
       },
       (err, res) => {
         if (err) {

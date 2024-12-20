@@ -621,7 +621,7 @@ async def rank_query(query: str, user_id: str, organization: str):
             
             # Generate a prompt for ChatGPT
             prompt = f"""
-            **Answer the following question based on these documents. Pay special attention to the numbers, rates, and financial details:**
+            **Answer the following question based on the most relevant document. If a document does not directly relate to the query, ignore it:**
     
             ### Question: {query}
             """
@@ -637,7 +637,7 @@ async def rank_query(query: str, user_id: str, organization: str):
             """
                 
             prompt += """
-            ### Provide a concise answer to the question based on the information above in Markdown format.
+            ### Provide a concise and direct answer based on the above documents. Provide a concise answer to the question based on the information above in Markdown format.
             """
             print(prompt, "prompt")
             # Get response from ChatGPT,""
