@@ -65,6 +65,7 @@ export const fileMetadata = async (req, res) => {
           ...searchFilter,
           "data.trashed":false
         })
+          .select('-chunks.embedding')
           .sort({ "data.modifiedTime": -1 }) 
           .skip(skip)
           .limit(limit);
@@ -100,7 +101,7 @@ export const fileMetadata = async (req, res) => {
                   },
                 };
               });
-              const resdb = await Filedata.bulkWrite(fileDataToInsert);
+              await Filedata.bulkWrite(fileDataToInsert);
 
               const dbData = await Filedata.find({
                 organization,
@@ -108,6 +109,7 @@ export const fileMetadata = async (req, res) => {
                 ...searchFilter,
                 "data.trashed":false
               })
+                .select('-chunks.embedding')
                 .sort({ "data.modifiedTime": -1 })
                 .skip(skip)
                 .limit(limit);

@@ -8,6 +8,8 @@ import { createEmbedding } from "../helper/Embedding.js";
 import cache from "../redis/cache.js";
 import embeddingQueue from "../Queue/embeddingQueue.js";
 
+const QUEUE_DELAY = 1000 * 60
+
 export async function UpdateDriveData() {
   console.log("update func")
   try {
@@ -95,7 +97,7 @@ async function listChanges(token, drive, startPageToken, user) {
               user_id,
               data: fileMetadata,
             })
-            embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: 10000 }).then((job) => console.log(`Job added: ${job.id}`))
+            embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
             .catch((err) => console.error('Error adding job to queue:', err));;
           } else {
             if (+fileMetadata.version > +previousMetadata.version) {
@@ -104,7 +106,7 @@ async function listChanges(token, drive, startPageToken, user) {
                 { $set: { data: fileMetadata } },
                 { upsert: true }
               );
-              embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: 10000 }).then((job) => console.log(`Job added: ${job.id}`))
+              embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
               .catch((err) => console.error('Error adding job to queue:', err));;
             }
           }

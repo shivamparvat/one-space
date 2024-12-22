@@ -54,171 +54,6 @@ import {
 } from "lucide-react"
 
 
-const datalocal: any[] = [{
-  "kind": "drive#file",
-  "copyRequiresWriterPermission": false,
-  "writersCanShare": true,
-  "viewedByMe": false,
-  "mimeType": "application/vnd.google-apps.document",
-  "iconLink": "https://drive-thirdparty.googleusercontent.com/16/type/application/vnd.google-apps.document",
-  "shared": true,
-  "lastModifyingUser": {
-    "displayName": "ankit izardar",
-    "kind": "drive#user",
-    "me": false,
-    "permissionId": "16452530556112605674",
-    "emailAddress": "ankitizardar93@gmail.com",
-    "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjUaCmNaiEwcAYT0loaZAmvlgvnsc1oJy8Qcj3Gcyv5dj2ZN9wuuEg=s64"
-  },
-  "owners": [
-    {
-      "displayName": "Shivam Goswami",
-      "kind": "drive#user",
-      "me": false,
-      "permissionId": "05196491709341434303",
-      "emailAddress": "shivamgoswami6261282518@gmail.com",
-      "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjW-HIDj1cIdjzVHmCvQrtPBjxUNwa_PsmBi_IvDW2lEeBKY2gWX=s64"
-    }
-  ],
-  "sharingUser": {
-    "displayName": "Shivam Goswami",
-    "kind": "drive#user",
-    "me": false,
-    "permissionId": "05196491709341434303",
-    "emailAddress": "shivamgoswami6261282518@gmail.com",
-    "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjW-HIDj1cIdjzVHmCvQrtPBjxUNwa_PsmBi_IvDW2lEeBKY2gWX=s64"
-  },
-  "webViewLink": "https://docs.google.com/document/d/1eEt-r5Ck5V4yVjkf1bBMciauMHeSOvtw0jph51p8eSY/edit?usp=drivesdk",
-  "size": "10234",
-  "viewersCanCopyContent": true,
-  "permissions": [
-    {
-      "id": "07389705132673097444",
-      "displayName": "Rajat Verma",
-      "type": "user",
-      "kind": "drive#permission",
-      "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjVQY9olGbqxqKHVUjZoWGnREIDL1tLZDIjdbhSbJv6l-XDuqlQ=s64",
-      "emailAddress": "cserajatverma@gmail.com",
-      "role": "writer",
-      "deleted": false,
-      "pendingOwner": false
-    },
-    {
-      "id": "08465809914174004982",
-      "displayName": "shivam Parvat",
-      "type": "user",
-      "kind": "drive#permission",
-      "photoLink": "https://lh3.googleusercontent.com/a/ACg8ocJORE_2jZMW0J7nTdBEV52BGicROVaj2pB_Gon1j5O5QktP9_3BBg=s64",
-      "emailAddress": "shivamgoswami2711@gmail.com",
-      "role": "writer",
-      "deleted": false,
-      "pendingOwner": false
-    },
-    {
-      "id": "16452530556112605674",
-      "displayName": "ankit izardar",
-      "type": "user",
-      "kind": "drive#permission",
-      "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjUaCmNaiEwcAYT0loaZAmvlgvnsc1oJy8Qcj3Gcyv5dj2ZN9wuuEg=s64",
-      "emailAddress": "ankitizardar93@gmail.com",
-      "role": "writer",
-      "deleted": false,
-      "pendingOwner": false
-    },
-    {
-      "id": "04415217033416578303",
-      "displayName": "verceltech",
-      "type": "user",
-      "kind": "drive#permission",
-      "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjXAuRPJVM6FpLz-2AZGzbR4CIY-MZOKiPkO-HpT5LwlvLdCzt4=s64",
-      "emailAddress": "atverceltech@gmail.com",
-      "role": "writer",
-      "deleted": false,
-      "pendingOwner": false
-    },
-    {
-      "id": "anyoneWithLink",
-      "type": "anyone",
-      "kind": "drive#permission",
-      "role": "reader",
-      "allowFileDiscovery": false
-    },
-    {
-      "id": "05196491709341434303",
-      "displayName": "Shivam Goswami",
-      "type": "user",
-      "kind": "drive#permission",
-      "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjW-HIDj1cIdjzVHmCvQrtPBjxUNwa_PsmBi_IvDW2lEeBKY2gWX=s64",
-      "emailAddress": "shivamgoswami6261282518@gmail.com",
-      "role": "owner",
-      "deleted": false,
-      "pendingOwner": false
-    }
-  ],
-  "hasThumbnail": true,
-  "spaces": [
-    "drive"
-  ],
-  "id": "1eEt-r5Ck5V4yVjkf1bBMciauMHeSOvtw0jph51p8eSY",
-  "name": "E-Commerce Quotation",
-  "starred": false,
-  "trashed": false,
-  "explicitlyTrashed": false,
-  "createdTime": "2024-08-15T11:19:56.048Z",
-  "modifiedTime": "2024-09-10T10:48:57.174Z",
-  "sharedWithMeTime": "2024-08-16T18:31:20.861Z",
-  "quotaBytesUsed": "10234",
-  "version": "136",
-  "ownedByMe": false,
-  "isAppAuthorized": false,
-  "capabilities": {
-    "canChangeViewersCanCopyContent": false,
-    "canEdit": true,
-    "canCopy": true,
-    "canComment": true,
-    "canAddChildren": false,
-    "canDelete": false,
-    "canDownload": true,
-    "canListChildren": false,
-    "canRemoveChildren": false,
-    "canRename": true,
-    "canTrash": false,
-    "canReadRevisions": true,
-    "canChangeCopyRequiresWriterPermission": false,
-    "canMoveItemIntoTeamDrive": false,
-    "canUntrash": false,
-    "canModifyContent": true,
-    "canMoveItemOutOfDrive": false,
-    "canAddMyDriveParent": false,
-    "canRemoveMyDriveParent": true,
-    "canMoveItemWithinDrive": true,
-    "canShare": true,
-    "canMoveChildrenWithinDrive": false,
-    "canModifyContentRestriction": true,
-    "canChangeSecurityUpdateEnabled": false,
-    "canAcceptOwnership": false,
-    "canReadLabels": false,
-    "canModifyLabels": false,
-    "canModifyEditorContentRestriction": true,
-    "canModifyOwnerContentRestriction": false,
-    "canRemoveContentRestriction": false
-  },
-  "thumbnailVersion": "44",
-  "modifiedByMe": false,
-  "permissionIds": [
-    "07389705132673097444",
-    "08465809914174004982",
-    "16452530556112605674",
-    "04415217033416578303",
-    "anyoneWithLink",
-    "05196491709341434303"
-  ],
-  "linkShareMetadata": {
-    "securityUpdateEligible": false,
-    "securityUpdateEnabled": true
-  }
-}]
-
 
 
 
@@ -348,6 +183,10 @@ export const columns: ColumnDef<any>[] = [
               </div></a></SheetTitle>
               <SheetDescription>
                 <h5 className="mb-2">Details</h5>
+                {
+                  Filedata?.hasThumbnail &&
+                  <img src={`${BASE_URL}/proxy-image?url=${Filedata?.thumbnailLink}`} alt={Filedata.name} className="w-6 h-6 rounded-full" />
+                }
                 <h5 className="mb-2">Onwer</h5>
                   {(Filedata?.owners || []).map((editor: any) => (
                     <div key={editor.id} className="flex items-center space-x-4">
@@ -360,7 +199,7 @@ export const columns: ColumnDef<any>[] = [
                     </div>
                   ))}
                 <h5 className="mb-2">Permissions</h5>
-                <Card className="p-4">
+                {Filedata?.permissions?.length >  1 && <Card className="p-4">
                   <div className="space-y-4">
                     {(Filedata?.permissions || []).map((editor: any) => (
                       <>
@@ -382,7 +221,7 @@ export const columns: ColumnDef<any>[] = [
                       </>
                     ))}
                   </div>
-                </Card>
+                </Card>}
               </SheetDescription>
             </SheetHeader>
           </SheetContent>

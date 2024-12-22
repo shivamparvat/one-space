@@ -51,31 +51,31 @@ export async function GoogleCallback(req, res) {
     });
     await newAuth.save();
 
-    oAuth2Client.setCredentials(tokens);
+    // oAuth2Client.setCredentials(tokens);
 
     // // Initialize Google Drive service
-    const drive = google.drive({ version: "v3", auth: oAuth2Client });
+    // const drive = google.drive({ version: "v3", auth: oAuth2Client });
 
-    // // Step 1: Get the startPageToken for monitoring all changes
-    const { data: startPageData } = await drive.changes.getStartPageToken();
-    const startPageToken = startPageData.startPageToken;
+    // // // Step 1: Get the startPageToken for monitoring all changes
+    // const { data: startPageData } = await drive.changes.getStartPageToken();
+    // const startPageToken = startPageData.startPageToken;
 
-    // Step 2: Create a unique channel ID and set up the webhook URL
-    const channelId = `${user_id}_${organization}`;
-    const webhookUrl = `${process.env.WEBHOOKURL}/api/v1/webhook/drive`; // Webhook URL to receive notifications
+    // // Step 2: Create a unique channel ID and set up the webhook URL
+    // const channelId = `${user_id}_${organization}`;
+    // const webhookUrl = `${process.env.WEBHOOKURL}/api/v1/webhook/drive`; // Webhook URL to receive notifications
 
-    // Step 3: Set up the watch request on changes feed
-    const watchRequest = {
-      resource: {
-        id: channelId,
-        type: "web_hook",
-        address: webhookUrl, // Webhook URL to receive change notifications
-      },
-      pageToken: startPageToken, // Include the required pageToken here
-    };
+    // // Step 3: Set up the watch request on changes feed
+    // const watchRequest = {
+    //   resource: {
+    //     id: channelId,
+    //     type: "web_hook",
+    //     address: webhookUrl, // Webhook URL to receive change notifications
+    //   },
+    //   pageToken: startPageToken, // Include the required pageToken here
+    // };
 
-    // Start watching for changes
-    const response = await drive.changes.watch(watchRequest);
+    // // Start watching for changes
+    // const response = await drive.changes.watch(watchRequest);
 
     return res.redirect("/dashboard"); // Change this to your desired redirect URL
   } catch (error) {
