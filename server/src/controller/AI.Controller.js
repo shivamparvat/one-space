@@ -65,19 +65,26 @@ export async function initEmbedding(req, res, permissions = false) {
           for (let index = 0; index < totalFiles; index++) {
             const file = files[index];
             const fileId = file?.id;
-  
-            const embeddingResult = await createEmbedding(
-              authClient,
-              fileId,
-              file
-            );
-  
-            if (!embeddingResult.success) {
-              throw new Error(
-                `Failed to create embedding for file ID: ${fileId}`
-              ); 
+            const embeddingFilesType = ["application/zip","application/x-compressed", "application/rar",  "application/vnd.google-apps.folder", "image/jpeg",  "image/png", "image/gif", "image/bmp", "image/webp", "image/svg+xml", "image/tiff", "image/x-icon", "image/vnd.microsoft.icon"];
+
+            // if ((file?.mimeType && embeddingFilesType.includes(file.mimeType))) {
+            //   console.log(file?.mimeType)
+            // }
+            if (!(file?.mimeType && embeddingFilesType.includes(file.mimeType))) {
+              const embeddingResult = await createEmbedding(
+                authClient,
+                fileId,
+                file
+              );
+    
+              if (!embeddingResult.success) {
+                throw new Error(
+                  `Failed to create embedding for file ID: ${fileId}`
+                ); 
+              }
             }
   
+
             const progress = Math.round(((index + 1) / totalFiles) * 100);
   
             res.write(

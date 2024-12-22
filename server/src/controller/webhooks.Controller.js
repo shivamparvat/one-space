@@ -1,7 +1,7 @@
 import axios from "axios";
 import { GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
 import AppToken from "../Schema/apptoken.js";
-import { authorizeGoogleDrive, loadGoogleDriveFile } from "../helper/metaData/drive.js";
+import { authorizeGoogleDrive } from "../helper/metaData/drive.js";
 import { google } from "googleapis";
 import cache from "../redis/cache.js";
 import Filedata from "../Schema/fileMetadata.js";

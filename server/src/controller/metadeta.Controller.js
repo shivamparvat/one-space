@@ -65,8 +65,10 @@ export const fileMetadata = async (req, res) => {
           ...searchFilter,
           "data.trashed":false
         })
+          .sort({ "data.modifiedTime": -1 }) 
           .skip(skip)
           .limit(limit);
+          console.log("data base get")
 
         if (dbData.length > 0) {
           results = [...results, ...dbData];
@@ -106,6 +108,7 @@ export const fileMetadata = async (req, res) => {
                 ...searchFilter,
                 "data.trashed":false
               })
+                .sort({ "data.modifiedTime": -1 })
                 .skip(skip)
                 .limit(limit);
                 

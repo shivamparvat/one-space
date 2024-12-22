@@ -1,9 +1,12 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from typing import Optional
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_extraction_chain_pydantic
+
 
 from pymongo import MongoClient
 from langchain.chat_models import ChatOpenAI
@@ -46,6 +49,11 @@ text_splitter = CharacterTextSplitter(separator="\n", chunk_size=2000, chunk_ove
 @app.get("/")
 async def health_check():
     return {"status": "ok", "message": "Service is running"}
+
+
+
+
+
 
 def preprocess_text(text):
     """Normalize text without removing special characters."""
@@ -489,26 +497,28 @@ async def upload_file(
         document_id = metadata_dict["id"]
         # Initialize the AgenticChunker
         agentic_chunker = AgenticChunker(openai_api_key=os.getenv("OPENAI_API_KEY"))
-
+        
         # Extract text from the file
         raw_text = extract_text_from_file(file)
         file_metadata = json.loads(metadata) if metadata else {}
-
+        
         # Preprocess the extracted text (e.g., remove unwanted characters, format)
         processed_text = preprocess_text(raw_text)
+        
         filename = file_metadata.get("name", file.filename)
-        combined_text = f"Filename: {filename}\n{raw_text}"
+        combined_text = f"Filename: {filename}\n{processed_text}"
         
         # Split the processed text into propositions
         propositions = text_splitter.split_text(combined_text)
-
+        
         # Add each proposition to the AgenticChunker
         agentic_chunker.add_propositions(propositions)
         agentic_chunker.generate_chunk_embeddings()
         agentic_chunker.pretty_print_chunks()
-
+        
         # Store chunks into MongoDB
         new_chunks = []
+        
         for chunk_id, chunk in agentic_chunker.get_chunks().items():
             new_chunks.append({
                 "filename": file_metadata.get("name", file.filename),
@@ -526,10 +536,12 @@ async def upload_file(
                 "$set": {
                     "chunks": new_chunks,
                     "filename": file_metadata.get("name", file.filename),  # Update filename
+                    "is_embedded": True
                 }
             },
             upsert=True  # Insert document if it doesn't exist
         )
+        
         if(result):
             # Return a success message along with chunk overview
             return {
@@ -544,6 +556,7 @@ async def upload_file(
         raise HTTPException(status_code=400, detail=str(ve))
     
     except Exception as e:
+        print(f"error: {e}")
         # Catch any other unexpected errors and raise an HTTPException
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -556,7 +569,7 @@ async def rank_query(query: str, user_id: str, organization: str):
         query_embedding = openai.Embedding.create(input=processed_text, model="text-embedding-ada-002")['data'][0]['embedding']
         
         # Perform similarity search for chunks in MongoDB by cosine similarity
-        query_filter = {"user_id": ObjectId(user_id),"organization": ObjectId(organization)}
+        query_filter = {"user_id": ObjectId(user_id),"organization": ObjectId(organization),"data.trashed": True}
         documents = collection.find(query_filter)
         
         # Check if documents exist
