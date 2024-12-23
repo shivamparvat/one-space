@@ -5,7 +5,7 @@ import Search from "../Schema/searchSchema.js";
 import cache from "../redis/cache.js";
 import {
   authorizeGoogleDrive,
-  listGoogleDriveFiles,
+  listGoogleDriveFilesRecursively,
 } from "../helper/metaData/drive.js";
 import {
   fetchDetailedDropboxFileData,
@@ -56,9 +56,10 @@ export const fileMetadata = async (req, res) => {
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
 
-      if ((cachedData || []).length > 0) {
-        results = [...results, ...cachedData];
-      } else {
+      // if ((cachedData || []).length > 0) {
+      //   results = [...results, ...cachedData];
+      // } else {
+      if(true){
         const dbData = await Filedata.find({
           organization,
           user_id,
@@ -71,7 +72,7 @@ export const fileMetadata = async (req, res) => {
           .limit(limit);
           console.log("data base get")
 
-        if (dbData.length > 0) {
+        if (!dbData.length > 0) {
           results = [...results, ...dbData];
           cache.set(cacheKey, dbData, 100);
         } else {
@@ -84,7 +85,7 @@ export const fileMetadata = async (req, res) => {
                 token_type,
                 expiry_date,
               });
-              const files = await listGoogleDriveFiles(authClient, 100);
+              const files = await listGoogleDriveFilesRecursively(authClient, 1000,"root",user_id, organization);
               const fileDataToInsert = files.map((file) => {
                 return {
                   updateOne: {

@@ -14,15 +14,16 @@ export function authorizeGoogleDrive(token) {
   }
   
 
-export function listGoogleDriveFiles(auth,pageSize=1000) {
+export function listGoogleDriveFiles(auth,pageSize=1000,folderId="root") {
   return new Promise((resolve, reject) => {
     const drive = google.drive({ version: "v3", auth });
-    const query = '("me" in owners or sharedWithMe = true) and trashed = false and mimeType != "application/vnd.google-apps.shortcut"';
+    // const query = '("me" in owners or sharedWithMe = true) and trashed = false and mimeType != "application/vnd.google-apps.shortcut"';
+    const query = `'${folderId}' in parents`;
     drive.files.list(
       {
         pageSize: pageSize,
         fields: "files(*)",
-        // q: query,
+        q: query,
       },
       (err, res) => {
         if (err) {
@@ -128,4 +129,36 @@ export async function loadGoogleDriveFile(auth, fileId, mimeType = 'application/
     console.error('Error downloading or exporting the file:', err);
     throw new Error('Failed to retrieve the file');
   }
+}
+
+
+export async function listGoogleDriveFilesRecursively(authClient, totalPages=1000, folderId = 'root', user_id, organization) {
+  const files = await listGoogleDriveFiles(authClient, totalPages, folderId); // Fetch files in the folder
+  const fileDataToInsert = [];
+
+  for (const file of files) {
+    if (file.mimeType === 'application/vnd.google-apps.folder') {
+      // If the file is a folder, recursively fetch its contents
+      const subfolderFiles = await listGoogleDriveFilesRecursively(authClient, file.id, user_id, organization);
+      fileDataToInsert.push(...subfolderFiles);
+    } else {
+      // Add file data to the batch
+      fileDataToInsert.push({
+        updateOne: {
+          filter: { doc_id: file.id, user_id, organization },
+          update: {
+            $set: {
+              doc_id: file.id,
+              user_id,
+              organization,
+              data: file,
+            },
+          },
+          upsert: true, // Insert a new document if no match is found
+        },
+      });
+    }
+  }
+
+  return fileDataToInsert;
 }

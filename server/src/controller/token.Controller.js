@@ -82,7 +82,7 @@ export const listTokens = async (req, res) => {
         .status(200)
         .json({ message: "Tokens retrieved successfully1", data: tokens });
     }
-    console.log({ user_id, organization })
+    
     tokens = await AppToken.find({ user_id, organization });
 
     await cache.set(cacheKey, tokens, 5);

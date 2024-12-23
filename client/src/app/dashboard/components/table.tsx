@@ -183,10 +183,13 @@ export const columns: ColumnDef<any>[] = [
               </div></a></SheetTitle>
               <SheetDescription>
                 <h5 className="mb-2">Details</h5>
-                {
+                <div className="flex justify-center items-center">
+                  <a href={Filedata?.webViewLink} target="_blank">
+                  {
                   Filedata?.hasThumbnail &&
-                  <img src={`${BASE_URL}/proxy-image?url=${Filedata?.thumbnailLink}`} alt={Filedata.name} className="w-6 h-6 rounded-full" />
-                }
+                  <img src={`${BASE_URL}/proxy-image?url=${Filedata?.thumbnailLink}`} alt={Filedata.name} className="w-30 h-30 border border-white-600" />
+                }</a>
+                </div>
                 <h5 className="mb-2">Onwer</h5>
                   {(Filedata?.owners || []).map((editor: any) => (
                     <div key={editor.id} className="flex items-center space-x-4">
