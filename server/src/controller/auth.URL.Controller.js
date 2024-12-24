@@ -25,7 +25,7 @@ export async function GoogleCallback(req, res) {
   const user = await fetchUserByToken(res, token);
 
   const user_id = user?._id;
-  const organization = user?.organization;
+  const organization = user?.organization?._id;
 
   const hostUrl = `${req.protocol}://${req.get("host")}`;
 

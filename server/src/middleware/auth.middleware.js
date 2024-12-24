@@ -34,7 +34,7 @@ export const authMiddleware = async (req, res, next) => {
     }
 
     // Find the user in the database for validation
-    const user = await User.findById(authData?.user_id);
+    const user = await User.findById(authData?.user_id).populate("organization");
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }

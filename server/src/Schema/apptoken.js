@@ -10,7 +10,7 @@ const authSchema = new mongoose.Schema(
     },
     organization: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
+      ref: "organization",
       required: true,
     },
     state: { type: String, required: true },

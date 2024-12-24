@@ -5,6 +5,7 @@ import Search from "../Schema/searchSchema.js";
 import cache from "../redis/cache.js";
 import {
   authorizeGoogleDrive,
+  dataOrganizer,
   listGoogleDriveFilesRecursively,
 } from "../helper/metaData/drive.js";
 import {
@@ -17,7 +18,7 @@ export const fileMetadata = async (req, res) => {
   try {
     let results = [];
     const user = req.user;
-    const organization = user?.organization;
+    const organization = user?.organization?._id;
 
     if (!organization)
       return res
@@ -57,6 +58,7 @@ export const fileMetadata = async (req, res) => {
       let cachedData = await cache.get(cacheKey);
 
       // if ((cachedData || []).length > 0) {
+      //   console.log("cache")
       //   results = [...results, ...cachedData];
       // } else {
       if(true){
@@ -70,11 +72,11 @@ export const fileMetadata = async (req, res) => {
           .sort({ "data.modifiedTime": -1 }) 
           .skip(skip)
           .limit(limit);
-          console.log("data base get")
 
-        if (!dbData.length > 0) {
-          results = [...results, ...dbData];
-          cache.set(cacheKey, dbData, 100);
+        if (dbData.length > 0) {
+          const OrganizeData = await dataOrganizer(dbData,user) || []
+          results = [...results, ...OrganizeData];
+          cache.set(cacheKey, OrganizeData, 100);
         } else {
           if (!searchQuery) {
             if (app?.state == GOOGLE_DRIVE_STR) {
@@ -116,8 +118,9 @@ export const fileMetadata = async (req, res) => {
                 .limit(limit);
                 
               if (dbData.length > 0) {
-                results = [...results, ...dbData];
-                cache.set(cacheKey, dbData, 100);
+                const OrganizeData = await dataOrganizer(dbData,user) || []
+                results = [...results, ...OrganizeData];
+                cache.set(cacheKey, OrganizeData, 100);
               }
             } else if (app?.state == DROPBOX_STR) {
               const { dbx } = await initializeDropbox({
@@ -163,7 +166,7 @@ export const autocomplete = async (req, res) => {
   const { query } = req.query; // User input query
 
   const user = req.user;
-  const organization = user?.organization;
+  const organization = user?.organization?._id;
 
   if (!organization)
     return res

@@ -10,7 +10,7 @@ const SearchSchema = new mongoose.Schema(
     },
     organization: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
+      ref: "organization",
       required: true,
       index: true,
     },

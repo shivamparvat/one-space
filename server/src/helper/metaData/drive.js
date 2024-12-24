@@ -1,20 +1,20 @@
 import { google } from "googleapis";
 
 export function authorizeGoogleDrive(token) {
-    return new Promise((resolve, reject) => {
-      const oAuth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI
-      );
-  
-      oAuth2Client.setCredentials(token);
-      resolve(oAuth2Client);
-    });
-  }
-  
+  return new Promise((resolve, reject) => {
+    const oAuth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      process.env.GOOGLE_REDIRECT_URI
+    );
 
-export function listGoogleDriveFiles(auth,pageSize=1000,folderId="root") {
+    oAuth2Client.setCredentials(token);
+    resolve(oAuth2Client);
+  });
+}
+
+
+export function listGoogleDriveFiles(auth, pageSize = 1000, folderId = "root") {
   return new Promise((resolve, reject) => {
     const drive = google.drive({ version: "v3", auth });
     // const query = '("me" in owners or sharedWithMe = true) and trashed = false and mimeType != "application/vnd.google-apps.shortcut"';
@@ -132,14 +132,14 @@ export async function loadGoogleDriveFile(auth, fileId, mimeType = 'application/
 }
 
 
-export async function listGoogleDriveFilesRecursively(authClient,user_id, organization,folderId = 'root', totalPages=1000 ) {
+export async function listGoogleDriveFilesRecursively(authClient, user_id, organization, folderId = 'root', totalPages = 1000) {
   const files = await listGoogleDriveFiles(authClient, totalPages, folderId); // Fetch files in the folder
   const fileDataToInsert = [];
 
   for (const file of files) {
     if (file.mimeType === 'application/vnd.google-apps.folder') {
       // If the file is a folder, recursively fetch its contents
-      const subfolderFiles = await listGoogleDriveFilesRecursively(authClient, user_id, organization, file.id, totalPages );
+      const subfolderFiles = await listGoogleDriveFilesRecursively(authClient, user_id, organization, file.id, totalPages);
       fileDataToInsert.push(...subfolderFiles);
     } else {
       // Add file data to the batch
@@ -162,3 +162,35 @@ export async function listGoogleDriveFilesRecursively(authClient,user_id, organi
 
   return fileDataToInsert;
 }
+
+
+export async function dataOrganizer(data = [], user) {
+  const email = user?.email
+  const organization = user?.organization
+
+  const organizationDomain = organization?.domain
+
+console.log(organizationDomain,"datadata")
+
+
+  return data.map(item => {
+    const data = item?.data;
+    const result = (data.permissions||[]).reduce(
+      (acc, { emailAddress }) => {
+        if (!emailAddress) return acc;
+        emailAddress.endsWith(`@${organizationDomain}`)
+          ? acc.internal.push(emailAddress)
+          : acc.external.push(emailAddress);
+
+        return acc;
+      },
+      { internal: [], external: [] }
+    );
+    // console.log(item,"dataOrganizer")
+    item.data = {...item.data, internalCount: result.internal.length,
+      externalCount: result.external.length,
+      internalUsers: result.internal,
+      externalUsers: result.external}
+    return item
+  })
+}  

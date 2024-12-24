@@ -1,5 +1,6 @@
 import { OAuth2Client } from "google-auth-library";
 import User from "../Schema/userSchema.js";
+import Organization from "../Schema/organizationSchema.js";
 import { compareHash, signJwt } from "../utils/Jwt.js";
 import { initEmbedding } from "./AI.Controller.js";
 
@@ -15,7 +16,6 @@ export const login = async (req, res) => {
     const authorization = req.headers.authorization;
     let loggedInWith = "";
 
-    console.log(authorization, "authorization");
     // Handle Google login
     if (authorization) {
       try {
@@ -122,8 +122,11 @@ export const login = async (req, res) => {
         is_active: findUser.is_active,
         ai_permission: findUser.ai_permission,
         organization: findUser.organization
-      };
+      }
 
+      let OrganizationData = await Organization.findById(findUser.organization);
+
+      payLoad.organization_data = OrganizationData
       const jwtToken = await signJwt(payLoad);
 
       // Respond with success

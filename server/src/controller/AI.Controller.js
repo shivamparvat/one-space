@@ -15,7 +15,7 @@ export const Embedding = async (req, res) => {
 export const AIsearch = async (req, res) => {
   try {
     const user = req.user;
-    const organization = user?.organization;
+    const organization = user?.organization?._id;
     const user_id = user?._id;
 
 
@@ -38,7 +38,7 @@ export const AIsearch = async (req, res) => {
 export async function initEmbedding(req, res, permissions = false) {
   const user = req.user;
 
-  const organization = user?.organization;
+  const organization = user?.organization?._id;
   const user_id = user?._id;
   if(permissions || user?.ai_permission){
 

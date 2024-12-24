@@ -26,7 +26,7 @@ const userSchema = new Schema(
     },
     organization:{
         type: Schema.Types.ObjectId,
-        ref: "Organization",
+        ref: "organization",
     },
     image: { type: String },
     address: {

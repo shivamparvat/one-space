@@ -6,7 +6,7 @@ import AppToken from "../Schema/apptoken.js"; // Adjust the path as necessary
 export const connect = async (req, res) => {
   const user = req.user;
   const user_id = user?._id;
-  const organization = user?.organization;
+  const organization = user?.organization?._id;
 
   const cacheKey = `token_${user_id}_${organization}`;
 
@@ -34,7 +34,7 @@ export const connect = async (req, res) => {
 export const disconnect = async (req, res) => {
   const user = req.user;
   const user_id = user?._id;
-  const organization = user?.organization;
+  const organization = user?.organization?._id;
 
   const cacheKey = `token_${user_id}_${organization}`;
 
@@ -71,7 +71,7 @@ export const listTokens = async (req, res) => {
   try {
     const user = req.user;
     const user_id = user?._id;
-    const organization = user?.organization;
+    const organization = user?.organization?._id;
 
     const cacheKey = `token_${user_id}_${organization}`;
 

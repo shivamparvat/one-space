@@ -76,7 +76,7 @@ export async function UpdateDriveData() {
 
 async function listChanges(token, drive, startPageToken, user) {
   const user_id = user?._id
-  const organization = user?.organization
+  const organization = user?.organization?._id
   try {
     const changesResponse = await drive.changes.list({
       pageToken: startPageToken,
