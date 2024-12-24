@@ -132,14 +132,14 @@ export async function loadGoogleDriveFile(auth, fileId, mimeType = 'application/
 }
 
 
-export async function listGoogleDriveFilesRecursively(authClient, totalPages=1000, folderId = 'root', user_id, organization) {
+export async function listGoogleDriveFilesRecursively(authClient,user_id, organization,folderId = 'root', totalPages=1000 ) {
   const files = await listGoogleDriveFiles(authClient, totalPages, folderId); // Fetch files in the folder
   const fileDataToInsert = [];
 
   for (const file of files) {
     if (file.mimeType === 'application/vnd.google-apps.folder') {
       // If the file is a folder, recursively fetch its contents
-      const subfolderFiles = await listGoogleDriveFilesRecursively(authClient, file.id, user_id, organization);
+      const subfolderFiles = await listGoogleDriveFilesRecursively(authClient, user_id, organization, file.id, totalPages );
       fileDataToInsert.push(...subfolderFiles);
     } else {
       // Add file data to the batch

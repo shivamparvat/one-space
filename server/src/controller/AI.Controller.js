@@ -58,7 +58,7 @@ export async function initEmbedding(req, res, permissions = false) {
             expiry_date,
           });
   
-          const files = await listGoogleDriveFiles(authClient,1000);
+          const files = await listGoogleDriveFilesRecursively(authClient, user_id, organization);
           const totalFiles = (files || []).length;
           // console.log(totalFiles,"totalFiles")
   

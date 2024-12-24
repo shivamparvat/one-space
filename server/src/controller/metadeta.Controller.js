@@ -85,7 +85,7 @@ export const fileMetadata = async (req, res) => {
                 token_type,
                 expiry_date,
               });
-              const files = await listGoogleDriveFilesRecursively(authClient, 1000,"root",user_id, organization);
+              const files = await listGoogleDriveFilesRecursively(authClient,user_id, organization);
               const fileDataToInsert = files.map((file) => {
                 return {
                   updateOne: {
