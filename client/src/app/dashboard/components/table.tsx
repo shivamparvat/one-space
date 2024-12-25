@@ -2,9 +2,7 @@
 
 import * as React from "react"
 import {
-  CaretSortIcon,
   ChevronDownIcon,
-  DotsHorizontalIcon,
 } from "@radix-ui/react-icons"
 import {
   ColumnDef,
@@ -19,15 +17,14 @@ import {
   useReactTable,
 } from "@tanstack/react-table"
 
-import {Button} from "@/components/ui/button"
-import {Checkbox} from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {Input} from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -36,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {BASE_URL} from "@/constants/appConfig"
+import { BASE_URL } from "@/constants/appConfig"
 import {
   Sheet,
   SheetContent,
@@ -54,13 +51,23 @@ import {
 } from "lucide-react"
 
 
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { formatFileSize } from "@/lib/utils"
+
+
+
 
 
 
 export const columns: ColumnDef<any>[] = [
   {
     id: "select",
-    header: ({table}) => (
+    header: ({ table }) => (
       <Checkbox
         checked={
           table.getIsAllPageRowsSelected() ||
@@ -70,7 +77,7 @@ export const columns: ColumnDef<any>[] = [
         aria-label="Select all"
       />
     ),
-    cell: ({row}) => (
+    cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
@@ -83,7 +90,7 @@ export const columns: ColumnDef<any>[] = [
   {
     // accessorKey: "doc",
     header: "Name",
-    cell: ({row}) => {
+    cell: ({ row }) => {
       const name: string = row.original?.data?.name as string;
       const iconLink: string = row.original?.data?.iconLink as string;
       const webViewLink: string = row.original?.data?.webViewLink as string;
@@ -105,9 +112,61 @@ export const columns: ColumnDef<any>[] = [
     },
   },
   {
+    accessorKey: "Internal User",
+    header: "Internal User",
+    cell: ({ row }) => {
+      const internalCount: number = (row.original?.data?.internalCount || []);
+      const internalUsers: string[] = (row.original?.data?.internalUsers || []);
+      return (
+        <>
+          {internalCount > 0
+            ? <HoverCard>
+              <HoverCardTrigger>
+                <div className={`capitaliz cursor-pointer`}>{internalCount}</div>
+              </HoverCardTrigger>
+              <HoverCardContent>
+                {internalUsers.map(item => (
+                  <div className="capitaliz my-2">
+                    {item}
+                  </div>
+                ))}
+              </HoverCardContent>
+            </HoverCard> : 0
+          }
+        </>
+      );
+    },
+  },
+  {
+    accessorKey: "External User",
+    header: "External User",
+    cell: ({ row }) => {
+      const externalCount: number = (row.original?.data?.externalCount || 0);
+      const externalUsers: string[] = (row.original?.data?.externalUsers || []);
+      return (
+        <div className="mr-2">
+          {externalCount > 0
+            ? <HoverCard>
+              <HoverCardTrigger>
+                <div className={`capitalize text-rose-500 cursor-pointer font-bold`}>{externalCount}</div>
+              </HoverCardTrigger>
+              <HoverCardContent>
+                {externalUsers.map(item => (
+                  <div className="capitaliz text-yellow-600">
+                    {item}
+                  </div>
+                ))}
+              </HoverCardContent>
+            </HoverCard> : 0
+          }
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "owners",
     header: "owners",
-    cell: ({row}) => {
+    cell: ({ row }) => {
       const userArray: any[] = (row.original?.data?.owners || []);
       const user = userArray[0]
       return (
@@ -128,7 +187,7 @@ export const columns: ColumnDef<any>[] = [
   {
     accessorKey: "lastModifyingUser",
     header: "Last Modify",
-    cell: ({row}) => {
+    cell: ({ row }) => {
       const user: any = row.original?.data?.lastModifyingUser;
       return (
         <div className="flex items-center space-x-2">
@@ -148,7 +207,7 @@ export const columns: ColumnDef<any>[] = [
   {
     id: "actions",
     enableHiding: false,
-    cell: ({row}) => {
+    cell: ({ row }) => {
       const Filedata = row.original?.data
 
 
@@ -167,10 +226,9 @@ export const columns: ColumnDef<any>[] = [
       return (
         <Sheet>
           <SheetTrigger>Details</SheetTrigger>
-          <SheetContent className="w-[800px] sm:w-[840px]">
+          <SheetContent className="w-[40vw] sm:w-[50vw]">
             <SheetHeader>
               <SheetTitle><a href={Filedata?.webViewLink} target="_blank"><div className="flex items-center space-x-2">
-
                 {Filedata?.iconLink && (
                   <img
                     src={`${BASE_URL}/proxy-image?url=${Filedata?.iconLink}`}
@@ -182,15 +240,28 @@ export const columns: ColumnDef<any>[] = [
                 <span className="capitalize">{Filedata?.name}</span>
               </div></a></SheetTitle>
               <SheetDescription>
-                <h5 className="mb-2">Details</h5>
-                <div className="flex justify-center items-center">
-                  <a href={Filedata?.webViewLink} target="_blank">
-                  {
-                  Filedata?.hasThumbnail &&
-                  <img src={`${BASE_URL}/proxy-image?url=${Filedata?.thumbnailLink}`} alt={Filedata.name} className="w-30 h-30 border border-white-600" />
-                }</a>
-                </div>
-                <h5 className="mb-2">Onwer</h5>
+                <ScrollArea className="h-[85vh]">
+                  <h5 className="my-3">Details</h5>
+                  <div className="flex justify-center items-center">
+                    <a href={Filedata?.webViewLink} target="_blank">
+                      {
+                        Filedata?.hasThumbnail &&
+                        <img src={`${BASE_URL}/proxy-image?url=${Filedata?.thumbnailLink}&`} alt={Filedata.name} className="w-30 h-30 border border-white-600" />
+                      }
+                    </a>
+                  </div>
+                  <div className="my-3">
+                    <div className="mt-2">
+                      Version {Filedata?.version}
+                    </div>
+                    <div className="mt-2">
+                      Size {formatFileSize(Filedata?.size)}
+                    </div>
+                    <div className="mt-2">
+                      CreatedTime {(Filedata?.createdTime || "").split("T")[0]} {(Filedata?.createdTime || "").split("T")[1]}
+                    </div>
+                  </div>
+                  <h5 className="my-3">Onwer</h5>
                   {(Filedata?.owners || []).map((editor: any) => (
                     <div key={editor.id} className="flex items-center space-x-4">
                       <img src={`${BASE_URL}/proxy-image?url=${editor.photoLink}`} alt={editor.displayName} className="w-6 h-6 rounded-full" />
@@ -201,30 +272,54 @@ export const columns: ColumnDef<any>[] = [
                       </div>
                     </div>
                   ))}
-                <h5 className="mb-2">Permissions</h5>
-                {Filedata?.permissions?.length >  1 && <Card className="p-4">
-                  <div className="space-y-4">
-                    {(Filedata?.permissions || []).map((editor: any) => (
-                      <>
-                        {editor?.id == "anyoneWithLink" ?
-                          <div key={editor.id} className="flex items-center space-x-2">
-                            <div className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
-                              <p className="font-bold flex items-center">Worrying <Link className="size-4 ms-2" /></p>
-                              <p>Anyone with the link can {editor.role} this document.</p>
-                            </div>
-                          </div> : editor.role !== "owner" ?
-                            <div key={editor.id} className="flex items-center space-x-4">
-                              <img src={`${BASE_URL}/proxy-image?url=${editor.photoLink}`} alt={editor.displayName} className="w-6 h-6 rounded-full" />
-                              <div>
-                                <p className="text-sm font-semibold">{editor.displayName}</p>
-                                <p className="text-xs text-gray-500">{editor.emailAddress}</p>
-                                <p className="text-xs">{editor.role}</p>
+                  <h5 className="my-3">Last Modifying User</h5>
+                  {Filedata?.lastModifyingUser &&
+                    <div className="flex items-center space-x-4">
+                      <img src={`${BASE_URL}/proxy-image?url=${Filedata?.lastModifyingUser?.photoLink}`} alt={Filedata?.lastModifyingUser?.displayName} className="w-6 h-6 rounded-full" />
+                      <div>
+                        <p className="text-sm font-semibold">{Filedata?.lastModifyingUser?.displayName}</p>
+                        <p className="text-xs text-gray-500">{Filedata?.lastModifyingUser?.emailAddress}</p>
+                        <p className="text-xs">{Filedata?.lastModifyingUser?.role}</p>
+                      </div>
+                    </div>}
+                  <h5 className="my-3">Permissions</h5>
+                  {Filedata?.permissions?.length > 1 && <Card className="p-4">
+                    <div className="space-y-4">
+                      {(Filedata?.permissions || []).map((editor: any) => (
+                        <>
+                          {editor?.id == "anyoneWithLink" ?
+                            <div key={editor.id} className="flex items-center space-x-2">
+                              <div className="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4" role="alert">
+                                <p className="font-bold flex items-center">Worrying <Link className="size-4 ms-2" /></p>
+                                <p>Anyone with the link can {editor.role} this document.</p>
                               </div>
-                            </div> : <></>}
-                      </>
+                            </div> : editor.role !== "owner" ?
+                              <div key={editor.id} className="flex items-center space-x-4">
+                                <img src={`${BASE_URL}/proxy-image?url=${editor.photoLink}`} alt={editor.displayName} className="w-6 h-6 rounded-full" />
+                                <div>
+                                  <p className="text-sm font-semibold">{editor.displayName}</p>
+                                  <p className="text-xs text-gray-500">{editor.emailAddress}</p>
+                                  <p className="text-xs">{editor.role}</p>
+                                </div>
+                              </div>
+                              : <></>}
+                        </>
+                      ))}
+                    </div>
+                  </Card>}
+                  {Object.entries(Filedata?.exportLinks || {})?.length && <h5 className="my-3 ">Export Links</h5>}
+                  <div className="flex justify-center items-center flex-wrap gap-4">
+                    {Object.entries(Filedata?.exportLinks || {}).map(([type, url], index) => (
+                      <Button
+                        key={type}
+                        onClick={() => { window.open(url as string, '_blank') }}
+                        className=""
+                      >
+                        {getExportFormat(url)}
+                      </Button>
                     ))}
                   </div>
-                </Card>}
+                </ScrollArea>
               </SheetDescription>
             </SheetHeader>
           </SheetContent>
@@ -236,7 +331,13 @@ export const columns: ColumnDef<any>[] = [
 interface DataTableProps {
   data: any[];
 }
-export function DataTable({data}: DataTableProps) {
+
+const getExportFormat = (url: any) => {
+  const urlObj = new URL(url);
+  return urlObj.searchParams.get("exportFormat");
+};
+
+export function DataTable({ data }: DataTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []

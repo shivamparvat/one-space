@@ -55,7 +55,7 @@ export default function LoginPage() {
     }
     useEffect(() => {
         if(token){
-            fatchUserData(token)
+            // fatchUserData(token)
             if(!token?.user?.organization){
                 router.push("/setup")
             }else{
