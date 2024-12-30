@@ -1,4 +1,31 @@
 import { google } from "googleapis";
+import { GOOGLE_DRIVE_STR } from "../../constants/appNameStr";
+
+
+
+export async function getFilesFromDrive(accessToken, user_id, organization){
+  const authClient = await authorizeGoogleDrive(accessToken);
+  const files = await listGoogleDriveFilesRecursively(authClient,user_id, organization);
+  const fileDataToInsert = files.map((file) => {
+    return {
+      updateOne: {
+        filter: { doc_id: file.id, user_id, organization },
+        update: {
+          $set: {
+            doc_id: file.id,
+            user_id,
+            organization,
+            data: file,
+            app_name: GOOGLE_DRIVE_STR,
+          },
+        },
+        upsert: true,
+      },
+    };
+  });
+  await Filedata.bulkWrite(fileDataToInsert);
+}
+
 
 export function authorizeGoogleDrive(token) {
   return new Promise((resolve, reject) => {
@@ -169,8 +196,6 @@ export async function dataOrganizer(data = [], user) {
   const organization = user?.organization
 
   const organizationDomain = organization?.domain
-
-console.log(organizationDomain,"datadata")
 
 
   return data.map(item => {

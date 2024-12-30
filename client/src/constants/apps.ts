@@ -1,11 +1,12 @@
 import drive from "@/asset/apps/google-drive.png"
 import onedrive from "@/asset/apps/one-drive.png"
 import dropbox from "@/asset/apps/dropbox.png"
-// import gmail from "@/asset/apps/gmail.png"
+import gmail from "@/asset/apps/gmail.png"
 import notion from "@/asset/apps/notion.png"
 import slack from "@/asset/apps/slack.png"
 
 export const GOOGLE_DRIVE_STR = "GOOGLE_DRIVE"
+export const GMAIL_STR = "GMAIL"
 export const ONE_DRIVE_STR = "ONE_DRIVE"
 export const DROPBOX_STR = "DROPBOX"
 export const NOTION_STR = "NOTION"
@@ -15,7 +16,7 @@ const appsList = [
     { id: 1, name: GOOGLE_DRIVE_STR, logo: drive },
     { id: 2, name: ONE_DRIVE_STR, logo: onedrive },
     { id: 3, name: DROPBOX_STR, logo: dropbox },
-    // {id: 6, name: 'Gmail', logo: gmail},
+    { id: 6, name: GMAIL_STR, logo: gmail},
     { id: 5, name: NOTION_STR, logo: notion },
     { id: 4, name: SLACK_STR, logo: slack },
 ];
@@ -65,19 +66,21 @@ export const oauthUrls = {
             scope: "files.metadata.write files.content.read file_requests.write sharing.read contacts.write profile email sharing.write account_info.write"
         },
     },
-    // "Gmail": {
-    // id:4,
-    // name: 'Gmail',
-    // logo: gmail,
-    //     authUrl: "https://accounts.google.com/o/oauth2/auth",
-    //     params: {
-    //         client_id: "YOUR_GMAIL_CLIENT_ID",   // Replace with your actual client ID
-    //         redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
-    //         response_type: "code",                // Use "token" for Implicit flow,
-    //         state:"name: 'Gmail",
-    //         scope: "https://www.googleapis.com/auth/gmail.readonly", // Scope for Gmail
-    //     },
-    // },
+    "GMAIL": {
+    id:4,
+    name: GMAIL_STR,
+    logo: gmail,
+        authUrl: "https://accounts.google.com/o/oauth2/auth",
+        params: {
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT, // Replace with your actual client ID
+            redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_URL,   // Replace with your actual redirect URI
+            response_type: "code",  
+            access_type: "offline",
+            prompt:"consent",              // Use "token" for Implicit flow,
+            state: GMAIL_STR,
+            scope: "https://www.googleapis.com/auth/gmail.readonly", // Scope for Gmail
+        },
+    },
     "NOTION": {
         id: 5,
         name: NOTION_STR,

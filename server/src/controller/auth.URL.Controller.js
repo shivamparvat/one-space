@@ -4,6 +4,8 @@ import { Dropbox } from "dropbox";
 import fetch from "node-fetch";
 import { DROPBOX_STR, GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
 import { fetchUserByToken } from "../middleware/auth.middleware.js";
+import { getFilesFromDrive } from "../helper/metaData/drive.js";
+import { getEmailsFromGmail } from "../helper/metaData/email.js";
 
 export async function GoogleAuthUrl(req, res) {
   const oAuth2Client = new google.auth.OAuth2(
@@ -37,60 +39,51 @@ export async function GoogleCallback(req, res) {
     );
     const { tokens } = await oAuth2Client.getToken(code);
 
-    // const findToken = await new AppToken.find();
+    const findToken = await new AppToken.find();
 
-    // if (!findToken) {
-    //   return res.redirect("/dashboard");
-    // }
+    if (!findToken) {
+      return res.redirect("/dashboard");
+    }
 
-    const newAuth = new AppToken({
-      user_id,
-      organization,
-      ...tokens,
-      state: GOOGLE_DRIVE_STR,
-    });
-    await newAuth.save();
 
-    // oAuth2Client.setCredentials(tokens);
+    if(state == GOOGLE_DRIVE_STR){
+      const newAuth = new AppToken({
+        user_id,
+        organization,
+        ...tokens,
+        state: GOOGLE_DRIVE_STR,
+      });
+      await newAuth.save();
+      
+      getFilesFromDrive({
+        ...tokens,
+        state: GOOGLE_DRIVE_STR,
+      }, user_id, organization)
 
-    // // Initialize Google Drive service
-    // const drive = google.drive({ version: "v3", auth: oAuth2Client });
+    }else if(state == GMAIL_STR){
+      getEmailsFromGmail({
+        ...tokens,
+        state: GOOGLE_DRIVE_STR,
+      }, user_id, organization)
+    }
 
-    // // // Step 1: Get the startPageToken for monitoring all changes
-    // const { data: startPageData } = await drive.changes.getStartPageToken();
-    // const startPageToken = startPageData.startPageToken;
-
-    // // Step 2: Create a unique channel ID and set up the webhook URL
-    // const channelId = `${user_id}_${organization}`;
-    // const webhookUrl = `${process.env.WEBHOOKURL}/api/v1/webhook/drive`; // Webhook URL to receive notifications
-
-    // // Step 3: Set up the watch request on changes feed
-    // const watchRequest = {
-    //   resource: {
-    //     id: channelId,
-    //     type: "web_hook",
-    //     address: webhookUrl, // Webhook URL to receive change notifications
-    //   },
-    //   pageToken: startPageToken, // Include the required pageToken here
-    // };
-
-    // // Start watching for changes
-    // const response = await drive.changes.watch(watchRequest);
-
-    return res.redirect("/dashboard"); // Change this to your desired redirect URL
+    return res.redirect("/dashboard"); 
   } catch (error) {
     console.log(error);
     return res.redirect("/dashboard");
   }
 }
 
-// Set fetch for Dropbox since the SDK needs it
 
 const config = {
   fetch,
   clientId: process.env.DROPBOX_CLIENT_ID,
   clientSecret: process.env.DROPBOX_CLIENT_SECRET,
 };
+
+
+
+
 
 const dbx = new Dropbox(config);
 export async function DropboxAuthUrl(req, res) {
@@ -120,6 +113,10 @@ export async function DropboxAuthUrl(req, res) {
 //   const authUrl = dbx.auth.getAuthenticationUrl(process.env.DROPBOX_REDIRECT_URI, null, 'code', 'offline', null, 'none', false)
 //   res.status(200).json({ authUrl });
 // }
+
+
+
+
 
 export async function DropboxCallback(req, res) {
   const { code, state } = req.query;

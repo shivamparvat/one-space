@@ -56,6 +56,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatFileSize } from "@/lib/utils"
 
@@ -125,9 +126,9 @@ export const columns: ColumnDef<any>[] = [
                 <div className={`capitaliz cursor-pointer`}>{internalCount}</div>
               </HoverCardTrigger>
               <HoverCardContent>
-                {internalUsers.map(item => (
+                {internalUsers.map((item, index) => (
                   <div className="capitaliz my-2">
-                    {item}
+                    {index + 1 + "."} {item}
                   </div>
                 ))}
               </HoverCardContent>
@@ -151,9 +152,9 @@ export const columns: ColumnDef<any>[] = [
                 <div className={`capitalize text-rose-500 cursor-pointer font-bold`}>{externalCount}</div>
               </HoverCardTrigger>
               <HoverCardContent>
-                {externalUsers.map(item => (
+                {externalUsers.map((item, index) => (
                   <div className="capitaliz text-yellow-600">
-                    {item}
+                    {index + 1 + "."} {item}
                   </div>
                 ))}
               </HoverCardContent>
@@ -246,7 +247,7 @@ export const columns: ColumnDef<any>[] = [
                     <a href={Filedata?.webViewLink} target="_blank">
                       {
                         Filedata?.hasThumbnail &&
-                        <img src={`${BASE_URL}/proxy-image?url=${Filedata?.thumbnailLink}&`} alt={Filedata.name} className="w-30 h-30 border border-white-600" />
+                        <img src={`${BASE_URL}/proxy-image?url=${Filedata?.thumbnailLink}`} alt={Filedata.name} className="w-30 h-30 border border-white-600" />
                       }
                     </a>
                   </div>

@@ -19,6 +19,9 @@ const FileMetadataSchema = new mongoose.Schema(
     data: {
       type: mongoose.Schema.Types.Mixed,
     },
+    app_name: {
+      type: string,
+    },
     is_embedded: {
       type: Boolean,
       default: false

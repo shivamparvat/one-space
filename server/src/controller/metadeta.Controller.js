@@ -46,9 +46,9 @@ export const fileMetadata = async (req, res) => {
         appIsEmpty: true,
       });
     }
-    for (const app of connectedApps) {
-      const { access_token, refresh_token, scope, token_type, expiry_date } =
-        app;
+    // for (const app of connectedApps) {
+    //   const { access_token, refresh_token, scope, token_type, expiry_date } =
+    //     app;
 
       const mainCache = `file_${user_id}_${organization}_${page}_${limit}`;
       const cacheKey = searchQuery
@@ -57,11 +57,9 @@ export const fileMetadata = async (req, res) => {
       // Check if data exists in cache
       let cachedData = await cache.get(cacheKey);
 
-      // if ((cachedData || []).length > 0) {
-      //   console.log("cache")
-      //   results = [...results, ...cachedData];
-      // } else {
-      if(true){
+      if ((cachedData || []).length > 0) {
+        results = [...results, ...cachedData];
+      } else {
         const dbData = await Filedata.find({
           organization,
           user_id,
@@ -73,86 +71,12 @@ export const fileMetadata = async (req, res) => {
           .skip(skip)
           .limit(limit);
 
-        if (dbData.length > 0) {
-          const OrganizeData = await dataOrganizer(dbData,user) || []
-          results = [...results, ...OrganizeData];
-          cache.set(cacheKey, OrganizeData, 100);
-        } else {
-          if (!searchQuery) {
-            if (app?.state == GOOGLE_DRIVE_STR) {
-              const authClient = await authorizeGoogleDrive({
-                access_token,
-                refresh_token,
-                scope,
-                token_type,
-                expiry_date,
-              });
-              const files = await listGoogleDriveFilesRecursively(authClient,user_id, organization);
-              const fileDataToInsert = files.map((file) => {
-                return {
-                  updateOne: {
-                    filter: { doc_id: file.id, user_id, organization },
-                    update: {
-                      $set: {
-                        doc_id: file.id,
-                        user_id,
-                        organization,
-                        data: file,
-                      },
-                    },
-                    upsert: true, // Insert a new document if no match is found
-                  },
-                };
-              });
-              await Filedata.bulkWrite(fileDataToInsert);
-
-              const dbData = await Filedata.find({
-                organization,
-                user_id,
-                ...searchFilter,
-                "data.trashed":false
-              })
-                .select('-chunks.embedding')
-                .sort({ "data.modifiedTime": -1 })
-                .skip(skip)
-                .limit(limit);
-                
-              if (dbData.length > 0) {
-                const OrganizeData = await dataOrganizer(dbData,user) || []
-                results = [...results, ...OrganizeData];
-                cache.set(cacheKey, OrganizeData, 100);
-              }
-            } else if (app?.state == DROPBOX_STR) {
-              const { dbx } = await initializeDropbox({
-                accessToken: access_token,
-                refreshToken: refresh_token,
-                clientId: process.env.DROPBOX_CLIENT_ID,
-                clientSecret: process.env.DROPBOX_CLIENT_SECRET,
-                expiryDate: expiry_date,
-                scope,
-              });
-
-              const files = await fetchDetailedDropboxFileData(dbx);
-
-              const fileDataToInsert = files.map((file) => {
-                return {
-                  doc_id: file.id,
-                  user_id,
-                  organization,
-                  data: file,
-                };
-              });
-              await Filedata.insertMany(fileDataToInsert);
-
-              cache.set(cacheKey, files, 100);
-
-              results = [...results, ...files];
-            }
-          }
+          if (dbData.length > 0) {
+            const OrganizeData = await dataOrganizer(dbData,user) || []
+            results = [...results, ...OrganizeData];
+            cache.set(cacheKey, OrganizeData, 100);
+          } 
         }
-      }
-    }
-
     res.status(200).json({ success: true, data: results });
   } catch (error) {
     console.error("Error fetching metadata:", error);
@@ -161,6 +85,9 @@ export const fileMetadata = async (req, res) => {
       .json({ success: false, message: "Error fetching metadata" });
   }
 };
+
+
+
 
 export const autocomplete = async (req, res) => {
   const { query } = req.query; // User input query
@@ -209,3 +136,86 @@ export const autocomplete = async (req, res) => {
     res.status(500).json({ error: "An error occurred during the search." });
   }
 };
+
+
+
+
+
+
+
+        // else {
+        //   if (!searchQuery) {
+        //     if (app?.state == GOOGLE_DRIVE_STR) {
+        //       const authClient = await authorizeGoogleDrive({
+        //         access_token,
+        //         refresh_token,
+        //         scope,
+        //         token_type,
+        //         expiry_date,
+        //       });
+        //       const files = await listGoogleDriveFilesRecursively(authClient,user_id, organization);
+        //       const fileDataToInsert = files.map((file) => {
+        //         return {
+        //           updateOne: {
+        //             filter: { doc_id: file.id, user_id, organization },
+        //             update: {
+        //               $set: {
+        //                 doc_id: file.id,
+        //                 user_id,
+        //                 organization,
+        //                 data: file,
+        //               },
+        //             },
+        //             upsert: true, // Insert a new document if no match is found
+        //           },
+        //         };
+        //       });
+        //       await Filedata.bulkWrite(fileDataToInsert);
+
+        //       const dbData = await Filedata.find({
+        //         organization,
+        //         user_id,
+        //         ...searchFilter,
+        //         "data.trashed":false
+        //       })
+        //         .select('-chunks.embedding')
+        //         .sort({ "data.modifiedTime": -1 })
+        //         .skip(skip)
+        //         .limit(limit);
+                
+        //       if (dbData.length > 0) {
+        //         const OrganizeData = await dataOrganizer(dbData,user) || []
+        //         results = [...results, ...OrganizeData];
+        //         cache.set(cacheKey, OrganizeData, 100);
+        //       }
+        //     } else 
+        //     if (app?.state == DROPBOX_STR) {
+        //       const { dbx } = await initializeDropbox({
+        //         accessToken: access_token,
+        //         refreshToken: refresh_token,
+        //         clientId: process.env.DROPBOX_CLIENT_ID,
+        //         clientSecret: process.env.DROPBOX_CLIENT_SECRET,
+        //         expiryDate: expiry_date,
+        //         scope,
+        //       });
+
+        //       const files = await fetchDetailedDropboxFileData(dbx);
+
+        //       const fileDataToInsert = files.map((file) => {
+        //         return {
+        //           doc_id: file.id,
+        //           user_id,
+        //           organization,
+        //           data: file,
+        //         };
+        //       });
+        //       await Filedata.insertMany(fileDataToInsert);
+
+        //       cache.set(cacheKey, files, 100);
+
+        //       results = [...results, ...files];
+        //     }
+        //   }
+        // }
+      
+    // }
