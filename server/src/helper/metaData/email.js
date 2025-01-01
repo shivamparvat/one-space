@@ -1,8 +1,10 @@
 import { google } from "googleapis";
-import { GMAIL_STR } from "../../constants/appNameStr";
+import { GMAIL_STR } from "../../constants/appNameStr.js";
+import { authorizeGoogleDrive } from "./drive.js";
 
 export async function getEmailsFromGmail(accessToken, user_id, organization) {
-  const authClient = await authorizeGmail(accessToken);
+  console.log(accessToken,user_id,organization)
+  const authClient = await authorizeGoogleDrive(accessToken);
   const emails = await listGmailMessagesRecursively(authClient, user_id, organization);
   const emailDataToInsert = emails.map((email) => {
     return {
@@ -24,20 +26,8 @@ export async function getEmailsFromGmail(accessToken, user_id, organization) {
   await EmailData.bulkWrite(emailDataToInsert);
 }
 
-export function authorizeGmail(token) {
-  return new Promise((resolve, reject) => {
-    const oAuth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-
-    oAuth2Client.setCredentials(token);
-    resolve(oAuth2Client);
-  });
-}
-
 export function listGmailMessages(auth, pageToken = null, maxResults = 100) {
+
   return new Promise((resolve, reject) => {
     const gmail = google.gmail({ version: "v1", auth });
     gmail.users.messages.list(
@@ -87,8 +77,11 @@ export async function loadGmailMessage(auth, messageId) {
 }
 
 export async function listGmailMessagesRecursively(authClient, user_id, organization, pageToken = null, totalPages = 100) {
+  console.log("fg fgh")
   const allMessages = [];
   for (let i = 0; i < totalPages; i++) {
+    const data = await listGmailMessages(authClient, pageToken);
+    console.log(data,"pageTokenpageToken")
     const { messages, nextPageToken } = await listGmailMessages(authClient, pageToken);
     if (!messages || messages.length === 0) break;
 

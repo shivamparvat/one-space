@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { GOOGLE_DRIVE_STR } from "../../constants/appNameStr";
+import { GOOGLE_DRIVE_STR } from "../../constants/appNameStr.js";
 
 
 

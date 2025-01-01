@@ -28,7 +28,7 @@ const buildOAuthUrl = (appName: any, token: string) => {
     oauthUrls[appName as unknown as keyof typeof oauthUrls];
 
   const updatedParams = params;
-  updatedParams.state = token;
+  updatedParams.state = JSON.stringify({token, app: params.state});
   const queryString = new URLSearchParams(updatedParams).toString();
   console.log(`${authUrl}?${queryString}`)
   return `${authUrl}?${queryString}`;

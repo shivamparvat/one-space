@@ -20,7 +20,7 @@ const FileMetadataSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
     },
     app_name: {
-      type: string,
+      type: String,
     },
     is_embedded: {
       type: Boolean,
