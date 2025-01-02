@@ -1,5 +1,6 @@
 export const  GOOGLE_DRIVE_STR = "GOOGLE_DRIVE"
 export const  GMAIL_STR = "GMAIL"
+export const  GOOGLE_CALENDAR_STR = "GOOGLE_CALENDAR"
 export const  ONE_DRIVE_STR = "ONE_DRIVE"
 export const  DROPBOX_STR = "DROPBOX"
 export const  NOTION_STR = "NOTION"

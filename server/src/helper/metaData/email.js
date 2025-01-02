@@ -1,9 +1,10 @@
 import { google } from "googleapis";
 import { GMAIL_STR } from "../../constants/appNameStr.js";
 import { authorizeGoogleDrive } from "./drive.js";
+import Filedata from "../../Schema/fileMetadata.js";
+
 
 export async function getEmailsFromGmail(accessToken, user_id, organization) {
-  console.log(accessToken,user_id,organization)
   const authClient = await authorizeGoogleDrive(accessToken);
   const emails = await listGmailMessagesRecursively(authClient, user_id, organization);
   const emailDataToInsert = emails.map((email) => {
@@ -23,10 +24,12 @@ export async function getEmailsFromGmail(accessToken, user_id, organization) {
       },
     };
   });
-  await EmailData.bulkWrite(emailDataToInsert);
+  console.log("d gfhfgk f fgk hf")
+  await Filedata.bulkWrite(emailDataToInsert);
 }
 
 export function listGmailMessages(auth, pageToken = null, maxResults = 100) {
+  const query = "label:IMPORTANT after:2024/01/01"
 
   return new Promise((resolve, reject) => {
     const gmail = google.gmail({ version: "v1", auth });
@@ -35,6 +38,7 @@ export function listGmailMessages(auth, pageToken = null, maxResults = 100) {
         userId: "me",
         maxResults,
         pageToken,
+        q: query,
       },
       (err, res) => {
         if (err) {
@@ -53,22 +57,28 @@ export async function loadGmailMessage(auth, messageId) {
     const message = await gmail.users.messages.get({
       userId: "me",
       id: messageId,
+      format: "full"
     });
 
-    const { payload } = message.data;
-    const headers = payload.headers.reduce((acc, header) => {
-      acc[header.name.toLowerCase()] = header.value;
-      return acc;
-    }, {});
-    const bodyData = payload.body?.data
-      ? Buffer.from(payload.body.data, "base64").toString("utf-8")
-      : "";
+    const headers = message.data.payload.headers;
+    const body = extractMessageBody(message.data.payload);
+    const labels = message.data.labelIds || [];
+    const timestamp = message.data.internalDate; // Timestamp is in internalDate
+    const attachments = extractAttachments(message.data.payload);
 
+    console.log("running...")
     return {
-      id: messageId,
-      headers,
-      snippet: message.data.snippet,
-      body: bodyData,
+      id: message.data.id,
+      threadId: message.data.threadId,
+      from: getHeader(headers, "From"),
+      to: getHeader(headers, "To"),
+      cc: getHeader(headers, "Cc"),
+      bcc: getHeader(headers, "Bcc"),
+      subject: getHeader(headers, "Subject"),
+      message: body,
+      labels: labels,
+      attachments: attachments,
+      timestamp: new Date(parseInt(timestamp)).toISOString(), // Convert timestamp to readable date
     };
   } catch (err) {
     console.error("Error loading Gmail message:", err);
@@ -77,11 +87,9 @@ export async function loadGmailMessage(auth, messageId) {
 }
 
 export async function listGmailMessagesRecursively(authClient, user_id, organization, pageToken = null, totalPages = 100) {
-  console.log("fg fgh")
   const allMessages = [];
   for (let i = 0; i < totalPages; i++) {
     const data = await listGmailMessages(authClient, pageToken);
-    console.log(data,"pageTokenpageToken")
     const { messages, nextPageToken } = await listGmailMessages(authClient, pageToken);
     if (!messages || messages.length === 0) break;
 
@@ -89,10 +97,10 @@ export async function listGmailMessagesRecursively(authClient, user_id, organiza
       const emailData = await loadGmailMessage(authClient, message.id);
       allMessages.push({
         updateOne: {
-          filter: { message_id: emailData.id, user_id, organization },
+          filter: { doc_id: emailData.id, user_id, organization },
           update: {
             $set: {
-              message_id: emailData.id,
+              doc_id: emailData.id,
               user_id,
               organization,
               data: emailData,
@@ -107,4 +115,39 @@ export async function listGmailMessagesRecursively(authClient, user_id, organiza
     pageToken = nextPageToken;
   }
   return allMessages;
+}
+
+
+function getHeader(headers, name) {
+  const header = headers.find((h) => h.name.toLowerCase() === name.toLowerCase());
+  return header ? header.value : null;
+}
+
+function extractMessageBody(payload) {
+  let body = "";
+
+  if (payload.body && payload.body.data) {
+    body = Buffer.from(payload.body.data, "base64").toString("utf-8");
+  } else if (payload.parts) {
+    payload.parts.forEach((part) => {
+      if (part.mimeType === "text/plain" && part.body.data) {
+        body += Buffer.from(part.body.data, "base64").toString("utf-8");
+      }
+    });
+  }
+  return body.trim();
+}
+
+function extractAttachments(payload) {
+  const attachments = [];
+
+  if (payload.parts) {
+    payload.parts.forEach((part) => {
+      if (part.filename) {
+        attachments.push(part.filename);
+      }
+    });
+  }
+
+  return attachments;
 }
