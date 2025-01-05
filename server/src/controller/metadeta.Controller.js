@@ -3,16 +3,6 @@ import Filedata from "../Schema/fileMetadata.js";
 import Search from "../Schema/searchSchema.js";
 
 import cache from "../redis/cache.js";
-import {
-  authorizeGoogleDrive,
-  dataOrganizer,
-  listGoogleDriveFilesRecursively,
-} from "../helper/metaData/drive.js";
-import {
-  fetchDetailedDropboxFileData,
-  initializeDropbox,
-} from "../helper/metaData/dropbox.js";
-import { DROPBOX_STR, GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
 
 export const fileMetadata = async (req, res) => {
   try {
@@ -36,8 +26,9 @@ export const fileMetadata = async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
+    let orQurey = []
 
-    const connectedApps = await AppToken.find({ organization, user_id });
+    const connectedApps = await AppToken.find({ organization, user_id }).select("state");
     if (!(connectedApps.length > 0)) {
       return res.status(200).json({
         success: true,
@@ -46,9 +37,10 @@ export const fileMetadata = async (req, res) => {
         appIsEmpty: true,
       });
     }
-    // for (const app of connectedApps) {
-    //   const { access_token, refresh_token, scope, token_type, expiry_date } =
-    //     app;
+    for (const app of connectedApps) {
+      const { state } = app;
+      orQurey.push({app_name:state})
+      }
 
       const mainCache = `file_${user_id}_${organization}_${page}_${limit}`;
       const cacheKey = searchQuery
@@ -64,17 +56,20 @@ export const fileMetadata = async (req, res) => {
           organization,
           user_id,
           ...searchFilter,
-          "data.trashed":false
+          $or: [
+            { "data.trashed": false }, 
+            { "data.trashed": { $exists: false } },
+            ...orQurey
+          ],
         })
           .select('-chunks.embedding')
-          .sort({ "data.modifiedTime": -1 }) 
+          .sort({"data.modifiedTime": -1 }) 
           .skip(skip)
           .limit(limit);
 
           if (dbData.length > 0) {
-            const OrganizeData = await dataOrganizer(dbData,user) || []
-            results = [...results, ...OrganizeData];
-            cache.set(cacheKey, OrganizeData, 100);
+            results = [...results, ...dbData];
+            cache.set(cacheKey, dbData, 100);
           } 
         }
     res.status(200).json({ success: true, data: results });

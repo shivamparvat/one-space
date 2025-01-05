@@ -20,6 +20,7 @@ const authSchema = new mongoose.Schema(
     token_type: { type: String, required: true },
     expiry_date: { type: Number, required: true },
     driveStartPageToken: String,
+    gmailStartHistoryId: String,
   },
   { timestamps: true }
 );

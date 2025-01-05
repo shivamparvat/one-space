@@ -1,30 +1,15 @@
 import { google } from "googleapis";
 import { GOOGLE_DRIVE_STR } from "../../constants/appNameStr.js";
 import Filedata from "../../Schema/fileMetadata.js";
+import cache from "../../redis/cache.js";
+import User from "../../Schema/userSchema.js";
 
 
 
 export async function getFilesFromDrive(accessToken, user_id, organization){
   const authClient = await authorizeGoogleDrive(accessToken);
   const files = await listGoogleDriveFilesRecursively(authClient,user_id, organization);
-  const fileDataToInsert = files.map((file) => {
-    return {
-      updateOne: {
-        filter: { doc_id: file.id, user_id, organization },
-        update: {
-          $set: {
-            doc_id: file.id,
-            user_id,
-            organization,
-            data: file,
-            app_name: GOOGLE_DRIVE_STR,
-          },
-        },
-        upsert: true,
-      },
-    };
-  });
-  await Filedata.bulkWrite(fileDataToInsert);
+  await Filedata.bulkWrite(files);
 }
 
 
@@ -171,6 +156,7 @@ export async function listGoogleDriveFilesRecursively(authClient, user_id, organ
       fileDataToInsert.push(...subfolderFiles);
     } else {
       // Add file data to the batch
+      const data = await dataOrganizer(file, user_id)
       fileDataToInsert.push({
         updateOne: {
           filter: { doc_id: file.id, user_id, organization },
@@ -179,7 +165,8 @@ export async function listGoogleDriveFilesRecursively(authClient, user_id, organ
               doc_id: file.id,
               user_id,
               organization,
-              data: file,
+              data: data,
+              app_name: GOOGLE_DRIVE_STR,
             },
           },
           upsert: true, // Insert a new document if no match is found
@@ -192,15 +179,18 @@ export async function listGoogleDriveFilesRecursively(authClient, user_id, organ
 }
 
 
-export async function dataOrganizer(data = [], user) {
-  const email = user?.email
+export async function dataOrganizer(data, user_id) {
+  const cacheKey = `org_user_${user_id}`
+  let user = await cache.get(cacheKey) 
+  if(!user){
+    user = await User.findById(user_id).populate("organization");
+    await cache.set(cacheKey,user,60*60*5) 
+  }
   const organization = user?.organization
 
   const organizationDomain = organization?.domain
 
 
-  return data.map(item => {
-    const data = item?.data;
     const result = (data.permissions||[]).reduce(
       (acc, { emailAddress }) => {
         if (!emailAddress) return acc;
@@ -212,11 +202,9 @@ export async function dataOrganizer(data = [], user) {
       },
       { internal: [], external: [] }
     );
-    // console.log(item,"dataOrganizer")
-    item.data = {...item.data, internalCount: result.internal.length,
+    data = {...data, internalCount: result.internal.length,
       externalCount: result.external.length,
       internalUsers: result.internal,
       externalUsers: result.external}
-    return item
-  })
+    return data
 }  

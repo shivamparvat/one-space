@@ -40,7 +40,6 @@ export async function GoogleCallback(req, res) {
     );
     const { tokens } = await oAuth2Client.getToken(code);
 
-    console.log("tokens",tokens)
     // const findToken = await new AppToken.find();
 
     // if (!findToken) {
@@ -65,7 +64,6 @@ export async function GoogleCallback(req, res) {
         organization
       );
     } else if (appName == GMAIL_STR) {
-      console.log(GMAIL_STR," gkfhg ")
       const newAuth = new AppToken({
         user_id,
         organization,
@@ -73,6 +71,10 @@ export async function GoogleCallback(req, res) {
         state: GMAIL_STR,
       });
       await newAuth.save();
+      console.log({
+        ...tokens,
+        state: GMAIL_STR,
+      })
       getEmailsFromGmail(
         {
           ...tokens,
