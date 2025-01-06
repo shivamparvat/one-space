@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
-import { authorizeGoogleDrive } from "../helper/metaData/drive.js";
+import { authorizeGoogleDrive, dataOrganizer } from "../helper/metaData/drive.js";
 import AppToken from "../Schema/apptoken.js";
 import User from "../Schema/userSchema.js";
 import Filedata from "../Schema/fileMetadata.js";
@@ -95,7 +95,7 @@ async function listChanges(token, drive, startPageToken, user) {
               doc_id: id,
               organization,
               user_id,
-              data: fileMetadata,
+              data: dataOrganizer(fileMetadata),
             })
             embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
             .catch((err) => console.error('Error adding job to queue:', err));;
@@ -103,7 +103,7 @@ async function listChanges(token, drive, startPageToken, user) {
             if (+fileMetadata.version > +previousMetadata.version) {
               await Filedata.updateOne(
                 { doc_id: id },
-                { $set: { data: fileMetadata } },
+                { $set: { data: dataOrganizer(fileMetadata) } },
                 { upsert: true }
               );
               embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
@@ -132,7 +132,7 @@ async function getFileMetadata(drive, ResourceID) {
   try {
     const response = await drive.files.get({
       fileId: ResourceID,
-      fields: "*" // Adjust fields as needed
+      fields: "*" 
     });
     return response.data;
   } catch (error) {

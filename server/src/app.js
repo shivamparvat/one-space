@@ -59,7 +59,7 @@ app.use("/api/v1/ai", AIRouter);
 app.use("/api/v1/user", userRouter);
 
 cron.schedule("*/5 * * * *", () => {
-  UpdateDriveData();
+  // UpdateDriveData();
   UpdateEmailData()
 });
 // app.use('/api', googleDriveRoutes);

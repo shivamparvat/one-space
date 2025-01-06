@@ -62,7 +62,7 @@ export async function UpdateEmailData() {
             cache.del(cacheTokenKey)
           }
           const gamilChange = await getNewUpdates(auth, startToken);
-          console.log(gamilChange?.changes)
+          console.log((gamilChange?.changes||[])[0]?.messages)
         }
       });
     }
