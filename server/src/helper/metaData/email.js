@@ -13,6 +13,7 @@ export async function getEmailsFromGmail(accessToken, user_id, organization) {
     const emails = await listGmailMessagesRecursively(authClient, user_id, organization);
 
     await Filedata.bulkWrite(emails);
+    console.log("email updated ")
   } catch (error) {
     console.log(error, "error")
   }
@@ -49,23 +50,23 @@ export async function loadGmailMessage(auth, messageId) {
       id: messageId,
       format: "full"
     });
-    
+
     const headers = message.data.payload.headers;
     const body = extractMessageBody(message.data.payload);
     const labels = message.data.labelIds || [];
     const timestamp = message.data.internalDate; // Timestamp is in internalDate
     const attachments = extractAttachments(message.data.payload);
     const isDeleted = labels.includes("TRASH");
-
-    console.log("running...", message.data.historyId)
     return {
       id: message.data.id,
       threadId: message.data.threadId,
+      Sender: getHeader(headers, "Sender"),
       from: getHeader(headers, "From"),
       to: getHeader(headers, "To"),
       cc: getHeader(headers, "Cc"),
       bcc: getHeader(headers, "Bcc"),
       subject: getHeader(headers, "Subject"),
+      snippet: message.data.snippet,
       message: body,
       labels: labels,
       attachments: attachments,
@@ -79,69 +80,90 @@ export async function loadGmailMessage(auth, messageId) {
 }
 
 export async function listGmailMessagesRecursively(authClient, user_id, organization, pageToken = null, totalPages = 100) {
-  const allMessages = [];
+  const groupedMessages = {}; // To group emails by threadId
+
   for (let i = 0; i < totalPages; i++) {
     const { messages, nextPageToken } = await listGmailMessages(authClient, pageToken);
     if (!messages || messages.length === 0) break;
-    
 
     for (const message of messages) {
       const emailData = await loadGmailMessage(authClient, message.id);
-      allMessages.push({
-        updateOne: {
-          filter: { doc_id: emailData.id, user_id, organization },
-          update: {
-            $set: {
-              doc_id: emailData.id,
-              user_id,
-              organization,
-              data: await processEmailData(emailData, user_id),
-              app_name: GMAIL_STR
-            },
-          },
-          upsert: true,
-        },
-      });
+      const threadId = emailData.threadId;
+      console.log("processing...",threadId)
+      // Process email data
+      const processedEmail = await processEmailData(emailData, user_id);
+
+      // Group emails by threadId
+      if (!groupedMessages[threadId]) {
+        groupedMessages[threadId] = {
+          doc_id: threadId,
+          email: [],
+        };
+      }
+      groupedMessages[threadId].email.push(processedEmail);
     }
 
     if (!nextPageToken) break;
     pageToken = nextPageToken;
   }
-  return allMessages;
-}
 
+  // Prepare bulk operations for the database
+  const bulkOperations = Object.values(groupedMessages).map(group => ({
+    updateOne: {
+      filter: { doc_id: group.doc_id, user_id, organization },
+      update: {
+        $set: {
+          doc_id: group.doc_id,
+          user_id,
+          organization,
+          data: {
+            emails: group.email,
+            modifiedTime: (group.email||[])[0]?.modifiedTime,
+            thread:(group.email||[]).every((message) =>
+              message.labels && message.labels.includes("TRASH")
+            )
+          },
+          app_name: GMAIL_STR,
+        },
+      },
+      upsert: true,
+    },
+  }));
+
+  return bulkOperations;
+}
 
 
 export async function getStartHistoryId(auth) {
   const gmail = google.gmail({ version: 'v1', auth });
 
   try {
-      // Fetch the latest message from the user's mailbox
-      const messageListResponse = await gmail.users.messages.list({
-          userId: 'me',
-          maxResults: 1, // Retrieve only the latest message
+    // Fetch the latest message from the user's mailbox
+    const messageListResponse = await gmail.users.messages.list({
+      userId: 'me',
+      maxResults: 1, // Retrieve only the latest message
+    });
+
+    const messages = messageListResponse.data.messages;
+
+    if (messages && messages.length > 0) {
+      const latestMessageId = messages[0].id;
+
+      // Fetch the message details to get the historyId
+      const messageResponse = await gmail.users.messages.get({
+        userId: 'me',
+        id: latestMessageId,
       });
 
-      const messages = messageListResponse.data.messages;
+      const startHistoryId = messageResponse.data.historyId;
 
-      if (messages && messages.length > 0) {
-          const latestMessageId = messages[0].id;
-
-          // Fetch the message details to get the historyId
-          const messageResponse = await gmail.users.messages.get({
-              userId: 'me',
-              id: latestMessageId,
-          });
-
-          const startHistoryId = messageResponse.data.historyId;
-
-          return startHistoryId;
-      } else {
-          return null;
-      }
+      return startHistoryId;
+    } else {
+      return null;
+    }
   } catch (error) {
-      console.error('Error retrieving startHistoryId:', error.message);
-      throw error; // Re-throw the error for higher-level handling
+    console.error('Error retrieving startHistoryId:', error.message);
+    throw error; // Re-throw the error for higher-level handling
   }
 }
 
@@ -156,79 +178,81 @@ export async function getNewUpdates(auth, startHistoryId) {
   const gmail = google.gmail({ version: 'v1', auth });
 
   try {
-      // Fetch changes in the Gmail account since the given startHistoryId
-      const res = await gmail.users.history.list({
-          userId: 'me',
-          startHistoryId: startHistoryId,
-      });
+    // Fetch changes in the Gmail account since the given startHistoryId
+    const res = await gmail.users.history.list({
+      userId: 'me',
+      startHistoryId: startHistoryId,
+    });
 
-      const history = res.data.history || [];
-      const changes = [];
+    const history = res.data.history || [];
+    const changes = [];
 
-      // Process the changes and store the relevant information
-      history.forEach(change => {
-          if (change.messagesAdded) {
-              changes.push({
-                  type: 'added',
-                  messages: change.messagesAdded,
-              });
-          }
-          if (change.messagesDeleted) {
-              changes.push({
-                  type: 'deleted',
-                  messages: change.messagesDeleted,
-              });
-          }
-          if (change.labelsAdded) {
-              changes.push({
-                  type: 'labelAdded',
-                  labels: change.labelsAdded,
-              });
-          }
-          if (change.labelsRemoved) {
-              changes.push({
-                  type: 'labelRemoved',
-                  labels: change.labelsRemoved,
-              });
-          }
-      });
-
-      const newHistoryId = res.data.historyId;
-
-      // Check if the historyId has changed
-      if (newHistoryId !== startHistoryId) {
-          return { historyId: newHistoryId, changes: changes };
-      } else {
-          return { historyId: startHistoryId, changes: [] };
+    // Process the changes and store the relevant information
+    history.forEach(change => {
+      if (change.messagesAdded) {
+        changes.push({
+          type: 'added',
+          messages: change.messagesAdded,
+        });
       }
+      if (change.messagesDeleted) {
+        changes.push({
+          type: 'deleted',
+          messages: change.messagesDeleted,
+        });
+      }
+      if (change.labelsAdded) {
+        changes.push({
+          type: 'labelAdded',
+          labels: change.labelsAdded,
+        });
+      }
+      if (change.labelsRemoved) {
+        changes.push({
+          type: 'labelRemoved',
+          labels: change.labelsRemoved,
+        });
+      }
+    });
+
+    const newHistoryId = res.data.historyId;
+
+    // Check if the historyId has changed
+    if (newHistoryId !== startHistoryId) {
+      return { historyId: newHistoryId, changes: changes };
+    } else {
+      return { historyId: startHistoryId, changes: [] };
+    }
   } catch (error) {
-      console.error('Error fetching new updates:', error.message);
-      throw error;
+    console.error('Error fetching new updates:', error.message);
+    throw error;
   }
 }
 
 
-function getHeader(headers, name) {
+export function getHeader(headers, name) {
   const header = headers.find((h) => h.name.toLowerCase() === name.toLowerCase());
   return header ? header.value : null;
 }
 
-function extractMessageBody(payload) {
+export function extractMessageBody(payload) {
   let body = "";
 
   if (payload.body && payload.body.data) {
     body = Buffer.from(payload.body.data, "base64").toString("utf-8");
   } else if (payload.parts) {
     payload.parts.forEach((part) => {
-      if (part.mimeType === "text/plain" && part.body.data) {
-        body += Buffer.from(part.body.data, "base64").toString("utf-8");
-      }
+      (part?.parts || []).forEach((part) => {
+        if (part.mimeType === "text/plain" && part.body.data) {
+          body += Buffer.from(part.body.data, "base64").toString("utf-8");
+        }
+      })
     });
   }
   return body.trim();
 }
 
-function extractAttachments(payload) {
+export function extractAttachments(payload) {
   const attachments = [];
 
   if (payload.parts) {
@@ -244,13 +268,13 @@ function extractAttachments(payload) {
 
 
 
-async function processEmailData(emailData, user_id) {
+export async function processEmailData(emailData, user_id) {
 
   const cacheKey = `org_user_${user_id}`
-  let user = await cache.get(cacheKey) 
-  if(!user){
+  let user = await cache.get(cacheKey)
+  if (!user) {
     user = await User.findById(user_id).populate("organization");
-    await cache.set(cacheKey,user,60*60*5) 
+    await cache.set(cacheKey, user, 60 * 60 * 5)
   }
   const organization = user?.organization
 
@@ -272,7 +296,7 @@ async function processEmailData(emailData, user_id) {
 
   const result = emails.reduce(
     (acc, emailStr) => {
-     const email = extractEmailStr(emailStr)
+      const email = extractEmailStr(emailStr)
       if (email.endsWith(`@${organizationDomain}`)) {
         acc.internal.push(email);
       } else {
@@ -300,7 +324,7 @@ function extractEmail(str) {
 }
 
 
-function extractEmailStr(str) {
+export function extractEmailStr(str) {
   const emailRegex = /<([^>]+)>/;
   const match = str.match(emailRegex);
   return match ? match[1] : str; // Return the email if found, otherwise null

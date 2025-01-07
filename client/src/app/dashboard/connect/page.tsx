@@ -108,7 +108,6 @@ export default function Dashboard() {
         </div>
         <div className="grid grid-cols-4 gap-6">
           {appsList.map((app) => {
-            console.log(connectedApps, app.name);
             const connectedApp = connectedApps.find(
               (connected) => connected.state === app.name
             );
@@ -124,7 +123,7 @@ export default function Dashboard() {
                     />
                   </div>
                   <div>
-                    <h2 className="text-xl font-semibold">{app.name}</h2>
+                    <h2 className="text-xl font-semibold">{app.lable}</h2>
                     <div className="mt-2 flex justify-end">
                       {connectedApp ? (
                         <AlertDialog>

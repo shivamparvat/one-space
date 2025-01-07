@@ -7,7 +7,8 @@ import Filedata from "../Schema/fileMetadata.js";
 import { createEmbedding } from "../helper/Embedding.js";
 import cache from "../redis/cache.js";
 import embeddingQueue from "../Queue/embeddingQueue.js";
-import {getNewUpdates, getStartHistoryId} from "../helper/metaData/email.js";
+import { extractAttachments, extractMessageBody, getHeader, getNewUpdates, getStartHistoryId, processEmailData } from "../helper/metaData/email.js";
+import e from "express";
 
 const QUEUE_DELAY = 1000 * 60
 
@@ -47,7 +48,7 @@ export async function UpdateEmailData() {
         });
 
 
-       const gmailStartHistoryId = await getStartHistoryId(auth)
+        const gmailStartHistoryId = await getStartHistoryId(auth)
 
         const currentGmailStartHistoryId = token?.gmailStartHistoryId;
 
@@ -62,7 +63,16 @@ export async function UpdateEmailData() {
             cache.del(cacheTokenKey)
           }
           const gamilChange = await getNewUpdates(auth, startToken);
-          console.log((gamilChange?.changes||[])[0]?.messages)
+          (gamilChange?.changes || []).forEach(async (changesMail)=>{
+            if(changesMail?.type == "labelRemoved"){
+              const threadId = changesMail?.message?.threadId
+              // const result = await getAllEmailsByThreadId(auth,threadId)
+              console.log(threadId)
+            }else{
+
+            }
+          })
+          // console.log(gamilChange)
         }
       });
     }
@@ -75,69 +85,74 @@ export async function UpdateEmailData() {
 
 
 
-async function listChanges(token, drive, startPageToken, user) {
-  const user_id = user?._id
-  const organization = user?.organization?._id
-  try {
-    const changesResponse = await drive.changes.list({
-      pageToken: startPageToken,
-      fields: 'changes(fileId,changeType, file(*))',
-    });
-    const changeFiles = await changesResponse.data.changes
-    // console.log(changeFiles)
-    if (changeFiles.length > 0) {
-      (changeFiles || []).map(async (file) => {
-        const fileMetadata = file?.file
-        const id = fileMetadata?.id
-        if (fileMetadata?.kind == "drive#file") {
-          const previousMetadata = await getPreviousMetadata(id, organization, user_id);
-          if (!previousMetadata) {
-            await Filedata.create({
-              doc_id: id,
-              organization,
-              user_id,
-              data: fileMetadata,
-            })
-            embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
-            .catch((err) => console.error('Error adding job to queue:', err));;
-          } else {
-            if (+fileMetadata.version > +previousMetadata.version) {
-              await Filedata.updateOne(
-                { doc_id: id },
-                { $set: { data: fileMetadata } },
-                { upsert: true }
-              );
-              embeddingQueue.add({ token, id }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
-              .catch((err) => console.error('Error adding job to queue:', err));;
-            }
-          }
-
-        }
-      })
-    } else {
-      // console.log('No changes found');
-    }
-  } catch (error) {
-    console.error('Error listing changes:', error);
-  }
-}
-
-
 async function getPreviousMetadata(ResourceID, organization, user_id) {
   const prefile = await Filedata.findOne({ doc_id: ResourceID, organization, user_id })
   return prefile?.data
 }
 
 
-async function getFileMetadata(drive, ResourceID) {
+
+/**
+ * Fetch all emails using a specific threadId
+ * @param {Object} authClient - Authenticated OAuth2 client
+ * @param {string} threadId - The thread ID to fetch emails for
+ * @returns {Promise<Object[]>} - Returns a list of email data in the thread
+ */
+export async function getAllEmailsByThreadId(authClient, threadId) {
+  const gmail = google.gmail({ version: "v1", auth: authClient });
+
   try {
-    const response = await drive.files.get({
-      fileId: ResourceID,
-      fields: "*" // Adjust fields as needed
+    const response = await gmail.users.threads.get({
+      userId: "me", // Use 'me' to refer to the authenticated user
+      id: threadId,
     });
-    return response.data;
+
+    // Extract messages from the thread response
+    const messages = response.data.messages;
+
+    if (!messages || messages.length === 0) {
+      return []; // No emails in the thread
+    }
+
+    // Process each email in the thread
+    const emailDataList = await Promise.all(
+      messages.map(async (message) => {
+        const emailData = await gmail.users.messages.get({
+          userId: "me",
+          id: message.id,
+        });
+
+
+        const headers = emailData.data.payload.headers;
+        const body = extractMessageBody(emailData.data.payload);
+        const labels = emailData.data.labelIds || [];
+        const timestamp = emailData.data.internalDate; // Timestamp is in internalDate
+        const attachments = extractAttachments(emailData.data.payload);
+        const isDeleted = labels.includes("TRASH");
+
+        // Process the email data (e.g., parse headers, body)
+        return {
+          id: emailData.data.id,
+          threadId: emailData.data.threadId,
+          Sender: getHeader(headers, "Sender"),
+          from: getHeader(headers, "From"),
+          to: getHeader(headers, "To"),
+          cc: getHeader(headers, "Cc"),
+          bcc: getHeader(headers, "Bcc"),
+          subject: getHeader(headers, "Subject"),
+          snippet: emailData.data.snippet,
+          message: body,
+          labels: labels,
+          attachments: attachments,
+          modifiedTime: new Date(parseInt(timestamp)).toISOString(), // Convert timestamp to readable date
+          trashed: isDeleted
+        };
+      })
+    );
+
+    return processEmailData(emailDataList);
   } catch (error) {
-    console.error("Error fetching file metadata:", error);
+    console.error("Error fetching emails by threadId:", error);
     throw error;
   }
 }

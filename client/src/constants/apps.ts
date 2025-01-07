@@ -15,13 +15,13 @@ export const NOTION_STR = "NOTION";
 export const SLACK_STR = "SLACK";
 
 const appsList = [
-  { id: 1, name: GOOGLE_DRIVE_STR, logo: drive },
-  { id: 2, name: ONE_DRIVE_STR, logo: onedrive },
-  { id: 3, name: DROPBOX_STR, logo: dropbox },
-  { id: 4, name: GMAIL_STR, logo: gmail },
-  { id: 5, name: GOOGLE_CALENDAR_STR, logo: googleCalendar },
-  { id: 6, name: NOTION_STR, logo: notion },
-  { id: 7, name: SLACK_STR, logo: slack }
+  { id: 1, lable:"GOOGLE DRIVE",name: GOOGLE_DRIVE_STR, logo: drive },
+  { id: 2, lable:"ONE DRIVE",name: ONE_DRIVE_STR, logo: onedrive },
+  { id: 3, lable:"DROPBOX",name: DROPBOX_STR, logo: dropbox },
+  { id: 4, lable:"GMAIL",name: GMAIL_STR, logo: gmail },
+  { id: 5, lable:"GOOGLE CALENDAR",name: GOOGLE_CALENDAR_STR, logo: googleCalendar },
+  { id: 6, lable:"NOTION",name: NOTION_STR, logo: notion },
+  { id: 7, lable:"SLACK",name: SLACK_STR, logo: slack }
 ];
 
 export const oauthUrls = {
