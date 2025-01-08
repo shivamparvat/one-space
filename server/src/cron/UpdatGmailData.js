@@ -4,7 +4,7 @@ import { authorizeGoogleDrive } from "../helper/metaData/drive.js";
 import AppToken from "../Schema/apptoken.js";
 import User from "../Schema/userSchema.js";
 import Filedata from "../Schema/fileMetadata.js";
-import { createEmbedding } from "../helper/Embedding.js";
+import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 import cache from "../redis/cache.js";
 import embeddingQueue from "../Queue/embeddingQueue.js";
 import { extractAttachments, extractMessageBody, getHeader, getNewUpdates, getStartHistoryId, processEmailData } from "../helper/metaData/email.js";
@@ -13,6 +13,7 @@ import e from "express";
 const QUEUE_DELAY = 1000 * 60
 
 export async function UpdateEmailData() {
+  console.log("update")
   try {
     const cacheTokenKey = `tokens_${GMAIL_STR}`
     // Retrieve all active users
@@ -53,26 +54,34 @@ export async function UpdateEmailData() {
         const currentGmailStartHistoryId = token?.gmailStartHistoryId;
 
         let startToken = currentGmailStartHistoryId || gmailStartHistoryId;
+        console.log(gmailStartHistoryId, currentGmailStartHistoryId)
         if (startToken) {
           if (gmailStartHistoryId !== currentGmailStartHistoryId) {
             await AppToken.findOneAndUpdate(
-              { user_id },
-              { $set: { driveStartPageToken: gmailStartHistoryId } },
-              { new: true, upsert: true }
+              { user_id, organization: user.organization, state: GMAIL_STR },
+              { $set: { gmailStartHistoryId: gmailStartHistoryId } },
+              { new: true }
             );
             cache.del(cacheTokenKey)
-          }
-          const gamilChange = await getNewUpdates(auth, startToken);
-          (gamilChange?.changes || []).forEach(async (changesMail)=>{
-            if(changesMail?.type == "labelRemoved"){
-              const threadId = changesMail?.message?.threadId
-              // const result = await getAllEmailsByThreadId(auth,threadId)
-              console.log(threadId)
-            }else{
 
-            }
-          })
-          // console.log(gamilChange)
+            const gamilChange = await getNewUpdates(auth, startToken);
+            console.log(JSON.stringify(gamilChange, null, 2));
+            (gamilChange?.changes || []).forEach(async (changesMail) => {
+              if (changesMail?.type == "labelRemoved") {
+                (changesMail?.labels || []).forEach(async (item) => {
+                  const threadId = item?.message?.threadId
+                  const result = await getAllEmailsByThreadId(auth, threadId)
+                  console.log(result)
+                })
+              } else if (changesMail?.type == "added") {
+                (changesMail?.messages || []).forEach(async (item) => {
+                  const threadId = item?.message?.threadId
+                  const result = await getAllEmailsByThreadId(auth, threadId)
+                  console.log(result)
+                })
+              }
+            })
+          }
         }
       });
     }
@@ -102,11 +111,16 @@ export async function getAllEmailsByThreadId(authClient, threadId) {
   const gmail = google.gmail({ version: "v1", auth: authClient });
 
   try {
+    if (!threadId) {
+      console.error("Thread ID is missing in changesMail:", changesMail);
+      return;
+    }
     const response = await gmail.users.threads.get({
       userId: "me", // Use 'me' to refer to the authenticated user
       id: threadId,
     });
 
+    // console.log(response)
     // Extract messages from the thread response
     const messages = response.data.messages;
 
@@ -151,6 +165,7 @@ export async function getAllEmailsByThreadId(authClient, threadId) {
     );
 
     return processEmailData(emailDataList);
+
   } catch (error) {
     console.error("Error fetching emails by threadId:", error);
     throw error;

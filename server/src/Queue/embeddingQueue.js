@@ -1,6 +1,7 @@
 import Bull from "bull";
-import { createEmbedding } from "../helper/Embedding.js";
+import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 import { authorizeGoogleDrive } from "../helper/metaData/drive.js";
+import { GMAIL_STR, GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
 
 // const embeddingQueue = new Bull("embeddingQueue", {
 //     redis: {
@@ -21,17 +22,19 @@ const embeddingQueue = new Bull("embeddingQueue", {
 
 // Process the queue
 embeddingQueue.process(async job => {
-    const { token, id } = job.data;
+    const { token, id, app } = job.data;
     try {
         console.log(`Started processing job with ID: ${job.id}`);
-        const auth = await authorizeGoogleDrive({
-            access_token: token?.access_token,
-            refresh_token: token?.refresh_token,
-            scope: token?.scope,
-            token_type: token?.token_type,
-            expiry_date: token?.expiry_date,
-        });
-        await createEmbedding(auth, id);
+        if (app == GOOGLE_DRIVE_STR || app == GMAIL_STR) {
+            const auth = await authorizeGoogleDrive({
+                access_token: token?.access_token,
+                refresh_token: token?.refresh_token,
+                scope: token?.scope,
+                token_type: token?.token_type,
+                expiry_date: token?.expiry_date,
+            });
+            await createGoolgeDriveEmbedding(auth, id);
+        }
         console.log(`Embedding created for file ID: ${id}`);
     } catch (error) {
         console.error(`Error creating embedding for file ID: ${id}`, error);

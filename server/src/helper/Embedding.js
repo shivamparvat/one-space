@@ -1,9 +1,9 @@
 import axios from "axios";
 import { loadGoogleDriveFile } from "./metaData/drive.js";
 import FormData from 'form-data'
+const RAG_URL = `http://${process.env.RAG_HOST}:8000/upload`;
 
-export async function createEmbedding(auth, fileId) {
-  const RAG_URL = `http://${process.env.RAG_HOST}:8000/upload`;
+export async function createGoolgeDriveEmbedding(auth, fileId) {
 
   try {
     // Get the file stream from Google Drive
@@ -12,11 +12,7 @@ export async function createEmbedding(auth, fileId) {
     formData.append("file", file?.data, { filename: file?.name, contentType: file?.mimeType });
     formData.append("metadata", JSON.stringify(file?.metadata));
     // Send the file and metadata to the server
-    const response = await axios.post(RAG_URL, formData, {
-      headers: {
-        ...formData.getHeaders(),
-      },
-    });
+    const response = await EmaddingRequest(formData)
     return {
       success: true,
       message: "Embedding created successfully",
@@ -29,4 +25,17 @@ export async function createEmbedding(auth, fileId) {
       message: error.message || "An error occurred while creating the embedding"
     };
   }
+}
+
+export async function createGmailEmbedding(auth, fileId) {
+
+}
+
+export async function EmaddingRequest(formData){
+  const response = await axios.post(RAG_URL, formData, {
+    headers: {
+      ...formData.getHeaders(),
+    },
+  });
+  return response
 }

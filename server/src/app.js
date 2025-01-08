@@ -58,7 +58,7 @@ app.use("/api/v1/org", orgRouter);
 app.use("/api/v1/ai", AIRouter);
 app.use("/api/v1/user", userRouter);
 
-cron.schedule("*/5 * * * *", () => {
+cron.schedule("* * * * * *", () => {
   // UpdateDriveData();
   UpdateEmailData()
 });

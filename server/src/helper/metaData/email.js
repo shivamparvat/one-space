@@ -1,4 +1,5 @@
 import { google } from "googleapis";
+import { convert }  from "html-to-text";
 import { GMAIL_STR } from "../../constants/appNameStr.js";
 import { authorizeGoogleDrive } from "./drive.js";
 import Filedata from "../../Schema/fileMetadata.js";
@@ -237,11 +238,18 @@ export function getHeader(headers, name) {
 
 export function extractMessageBody(payload) {
   let body = "";
-
+  
   if (payload.body && payload.body.data) {
     body = Buffer.from(payload.body.data, "base64").toString("utf-8");
   } else if (payload.parts) {
     payload.parts.forEach((part) => {
+      if (part.mimeType === "text/html" && part.body.data) {
+        const htmlContent = Buffer.from(part.body.data, "base64").toString("utf-8");
+        const textContent = convert(htmlContent, {
+          wordwrap: 130, // Wrap text at 130 characters
+        });
+        body += textContent;
+      }
       (part?.parts || []).forEach((part) => {
         if (part.mimeType === "text/plain" && part.body.data) {
           body += Buffer.from(part.body.data, "base64").toString("utf-8");

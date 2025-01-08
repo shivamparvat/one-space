@@ -1,4 +1,4 @@
-import { createEmbedding } from "../helper/Embedding.js";
+import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 import {
   authorizeGoogleDrive,
   listGoogleDriveFiles,
@@ -71,7 +71,7 @@ export async function initEmbedding(req, res, permissions = false) {
             //   console.log(file?.mimeType)
             // }
             if (!(file?.mimeType && embeddingFilesType.includes(file.mimeType))) {
-              const embeddingResult = await createEmbedding(
+              const embeddingResult = await createGoolgeDriveEmbedding(
                 authClient,
                 fileId,
                 file

@@ -5,7 +5,7 @@ import { authorizeGoogleDrive } from "../helper/metaData/drive.js";
 import { google } from "googleapis";
 import cache from "../redis/cache.js";
 import Filedata from "../Schema/fileMetadata.js";
-import { createEmbedding } from "../helper/Embedding.js";
+import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 
 
 
@@ -68,7 +68,7 @@ export const driveWebhook = async (req, res) => {
               user_id,
               data: fileMetadata,
             })
-            await createEmbedding(auth, id)
+            await createGoolgeDriveEmbedding(auth, id)
           } else {
             if (
               fileMetadata.name !== previousMetadata.name ||
@@ -84,7 +84,7 @@ export const driveWebhook = async (req, res) => {
             }
 
             if (fileMetadata.md5Checksum !== previousMetadata.md5Checksum) {
-              await createEmbedding(auth, id)
+              await createGoolgeDriveEmbedding(auth, id)
             }
           }
 
