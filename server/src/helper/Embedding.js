@@ -1,7 +1,7 @@
 import axios from "axios";
 import { loadGoogleDriveFile } from "./metaData/drive.js";
 import FormData from 'form-data'
-const RAG_URL = `http://${process.env.RAG_HOST}:8000/upload`;
+const RAG_URL = `http://${process.env.RAG_HOST}:8000`;
 
 export async function createGoolgeDriveEmbedding(auth, fileId) {
 
@@ -27,15 +27,28 @@ export async function createGoolgeDriveEmbedding(auth, fileId) {
   }
 }
 
-export async function createGmailEmbedding(auth, fileId) {
-
+export async function createGmailEmbedding(text, metadata) {
+  try {
+    const response = await TextEmaddingRequest({text,metadata})
+    return {
+      success: true,
+      message: "Embedding created successfully",
+      data: response?.data
+    };
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 export async function EmaddingRequest(formData){
-  const response = await axios.post(RAG_URL, formData, {
+  const response = await axios.post(RAG_URL+"/upload", formData, {
     headers: {
       ...formData.getHeaders(),
     },
   });
+  return response
+}
+export async function TextEmaddingRequest(data){
+  const response = await axios.post(RAG_URL+"/embed-text", data);
   return response
 }

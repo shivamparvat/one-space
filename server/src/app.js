@@ -58,8 +58,8 @@ app.use("/api/v1/org", orgRouter);
 app.use("/api/v1/ai", AIRouter);
 app.use("/api/v1/user", userRouter);
 
-cron.schedule("* * * * * *", () => {
-  // UpdateDriveData();
+cron.schedule("*/5 * * * *", () => {
+  UpdateDriveData();
   UpdateEmailData()
 });
 // app.use('/api', googleDriveRoutes);

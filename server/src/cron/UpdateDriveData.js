@@ -98,7 +98,7 @@ async function listChanges(token, drive, startPageToken, user) {
               data: dataOrganizer(fileMetadata),
             })
             embeddingQueue.add({ token, id, app: GOOGLE_DRIVE_STR }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
-              .catch((err) => console.error('Error adding job to queue:', err));;
+              .catch((err) => console.error('Error adding job to queue:', err));
           } else {
             if (+fileMetadata.version > +previousMetadata.version) {
               await Filedata.updateOne(

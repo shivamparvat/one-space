@@ -535,7 +535,6 @@ async def upload_file(
             {
                 "$set": {
                     "chunks": new_chunks,
-                    "filename": file_metadata.get("name", file.filename),  # Update filename
                     "is_embedded": True
                 }
             },
@@ -560,7 +559,79 @@ async def upload_file(
         # Catch any other unexpected errors and raise an HTTPException
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/embed-text")
+async def embed_text(request: Request):
+    try:
+        # Parse JSON payload
+        body = await request.json()
+        raw_text = body.get("text", "")
+        metadata = body.get("metadata", {})
+        
+        # Validate metadata and document ID
+        if not metadata or "id" not in metadata:
+            raise ValueError("Metadata with a valid 'id' field is required.")
+        
+        document_id = metadata["id"]
+        user_id = metadata["user_id"]
+        
+        # Initialize the AgenticChunker
+        agentic_chunker = AgenticChunker(openai_api_key=os.getenv("OPENAI_API_KEY"))
+        
+        # Preprocess the extracted text (e.g., remove unwanted characters, format)
+        processed_text = preprocess_text(raw_text)
+        
+        # Combine metadata and text for embedding
+        
+        # Split the processed text into propositions
+        propositions = text_splitter.split_text(processed_text)
+        
+        # Add each proposition to the AgenticChunker
+        agentic_chunker.add_propositions(propositions)
+        agentic_chunker.generate_chunk_embeddings()
+        agentic_chunker.pretty_print_chunks()
+        
+        # Store chunks into MongoDB
+        new_chunks = []
+        for chunk_id, chunk in agentic_chunker.get_chunks().items():
+            new_chunks.append({
+                "chunk_id": chunk_id,
+                "title": chunk["title"],
+                "summary": chunk["summary"],
+                "propositions": chunk["propositions"],
+                "embedding": chunk["embedding"],
+            })
 
+        # Update existing document in MongoDB
+        result = collection.update_one(
+            {"doc_id": document_id, user_id: user_id},  # Filter by document_id
+            {
+                "$set": {
+                    "chunks": new_chunks,
+                    "is_embedded": True
+                }
+            },
+            upsert=True  # Insert document if it doesn't exist
+        )
+        
+        if result:
+            # Return a success message along with chunk overview
+            return {
+                "message": "Text processed and added to MongoDB",
+                "success": True,
+                "chunk_outline": agentic_chunker.get_chunk_outline(),
+            }
+    
+    except ValueError as ve:
+        # Raise an HTTPException for any value-related errors
+        raise HTTPException(status_code=400, detail=str(ve))
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        # Catch any other unexpected errors and raise an HTTPException
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
+    
 @app.post("/rank")
 async def rank_query(query: str, user_id: str, organization: str):
     try:

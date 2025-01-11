@@ -1,5 +1,5 @@
 import Bull from "bull";
-import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
+import { createGmailEmbedding, createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 import { authorizeGoogleDrive } from "../helper/metaData/drive.js";
 import { GMAIL_STR, GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
 
@@ -22,7 +22,7 @@ const embeddingQueue = new Bull("embeddingQueue", {
 
 // Process the queue
 embeddingQueue.process(async job => {
-    const { token, id, app } = job.data;
+    const { token, id, app, text, metaData } = job.data;
     try {
         console.log(`Started processing job with ID: ${job.id}`);
         if (app == GOOGLE_DRIVE_STR || app == GMAIL_STR) {
@@ -33,7 +33,11 @@ embeddingQueue.process(async job => {
                 token_type: token?.token_type,
                 expiry_date: token?.expiry_date,
             });
-            await createGoolgeDriveEmbedding(auth, id);
+            if (app == GOOGLE_DRIVE_STR) {
+                await createGoolgeDriveEmbedding(auth, id);
+            } else if (app == GMAIL_STR) {
+                await createGmailEmbedding(text, {id,...metaData});
+            }
         }
         console.log(`Embedding created for file ID: ${id}`);
     } catch (error) {
