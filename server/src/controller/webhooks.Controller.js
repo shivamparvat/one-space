@@ -11,7 +11,6 @@ import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 
 export const driveWebhook = async (req, res) => {
   try {
-    console.log(" jg jg jh g")
     const ChannelID = req.headers["x-goog-channel-id"];
     const MessageNumber = req.headers["x-goog-message-number"];
     const ResourceID = req.headers["x-goog-resource-id"];
@@ -30,17 +29,6 @@ export const driveWebhook = async (req, res) => {
 
     if (!messagetoken) {
       cache.set(cache_id, MessageNumber, 10)
-      console.table({
-        ChannelID,
-        MessageNumber,
-        ResourceID,
-        ResourceState,
-        ResourceURI,
-        Changed,
-        ChannelToken,
-        user_id,
-        organization
-      });
       const tokens = await AppToken.findOne({ user_id, organization, state: GOOGLE_DRIVE_STR });
       const response = await axios.get(ResourceURI, {
         headers: { Authorization: `Bearer ${tokens?.access_token}` },

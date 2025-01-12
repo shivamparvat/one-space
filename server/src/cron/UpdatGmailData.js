@@ -4,10 +4,9 @@ import { authorizeGoogleDrive } from "../helper/metaData/drive.js";
 import AppToken from "../Schema/apptoken.js";
 import User from "../Schema/userSchema.js";
 import Filedata from "../Schema/fileMetadata.js";
-import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 import cache from "../redis/cache.js";
 import embeddingQueue from "../Queue/embeddingQueue.js";
-import { extractAttachments, extractMessageBody, getHeader, getNewUpdates, getStartHistoryId, processEmailData } from "../helper/metaData/email.js";
+import { extractAttachments, extractMessageBody, generateConversationEmbedding, getHeader, getNewUpdates, getStartHistoryId, processEmailData } from "../helper/metaData/email.js";
 import e from "express";
 
 const QUEUE_DELAY = 1000 * 60
@@ -69,13 +68,6 @@ export async function UpdateEmailData() {
                 for (const item of changesMail?.messages || []) {
                   const threadId = item?.message?.threadId;
                   const processedEmail = await getAllEmailsByThreadId(auth, threadId, user_id);
-
-                  const processedEmailText = await generateEmbeddingText(processedEmail);
-                  const metaData = {user_id}
-                  embeddingQueue.add({ token, id:threadId, app: GMAIL_STR,text:processedEmailText, metaData }, { jobId: `embedding_${threadId}`, delay: QUEUE_DELAY })
-                  .then((job) => console.log(`Job added: ${job.id}`))
-                  .catch((err) => console.error('Error adding job to queue:', err));
-
                   if (!groupedMessages[threadId]) {
                     groupedMessages[threadId] = {
                       doc_id: threadId,
@@ -88,14 +80,7 @@ export async function UpdateEmailData() {
                 for (const item of changesMail?.messages || []) {
                   const threadId = item?.message?.threadId;
                   const processedEmail = await getAllEmailsByThreadId(auth, threadId, user_id);
-                  const processedEmailText = await generateEmbeddingText(processedEmail);
-                  
-                  const metaData = {user_id}
-                  embeddingQueue.add({ token, id:threadId, app: GMAIL_STR,text:processedEmailText, metaData }, { jobId: `embedding_${threadId}`, delay: QUEUE_DELAY })
-                  .then((job) => console.log(`Job added: ${job.id}`))
-                  .catch((err) => console.error('Error adding job to queue:', err));
 
-                  
                   if (!groupedMessages[threadId]) {
                     groupedMessages[threadId] = {
                       doc_id: threadId,
@@ -106,8 +91,8 @@ export async function UpdateEmailData() {
                 }
               }
             }
-            const updated = updateDataInDb(user,groupedMessages)
-            if(updated){
+            const updated = updateDataInDb(user, groupedMessages)
+            if (updated) {
               console.log("update Email Success")
             }
           }
@@ -194,83 +179,46 @@ export async function getAllEmailsByThreadId(authClient, threadId, user_id) {
   }
 }
 
-async function updateDataInDb(user,groupedMessages = {}){
-try {
-  const user_id = user?._id, organization = user?.organization?._id;
+async function updateDataInDb(user, groupedMessages = {}) {
+  try {
+    const user_id = user?._id, organization = user?.organization?._id;
 
-  const bulkOperations = Object.values(groupedMessages).map(group => ({
-    updateOne: {
-      filter: { doc_id: group.doc_id, user_id, organization },
-      update: {
-        $set: {
-          doc_id: group.doc_id,
-          user_id,
-          organization,
-          data: {
-            emails: group.email,
-            modifiedTime: (group.email||[])[0]?.modifiedTime,
-            thread:(group.email||[]).every((message) =>
-              message.labels && message.labels.includes("TRASH")
-            )
+    const bulkOperations = Object.values(groupedMessages).map(group => ({
+      updateOne: {
+        filter: { doc_id: group.doc_id, user_id, organization },
+        update: {
+          $set: {
+            doc_id: group.doc_id,
+            user_id,
+            organization,
+            data: {
+              emails: group.email,
+              modifiedTime: (group.email || [])[0]?.modifiedTime,
+              thread: (group.email || []).every((message) =>
+                message.labels && message.labels.includes("TRASH")
+              )
+            },
+            app_name: GMAIL_STR,
           },
-          app_name: GMAIL_STR,
         },
+        upsert: true,
       },
-      upsert: true,
-    },
-  }));
-  await Filedata.bulkWrite(bulkOperations);
-  return true
-} catch (error) {
-  console.log(error)
-  return false
-}
-}
-
-
-
-function generateEmbeddingText(processedEmail) {
-  const {
-      id,
-      threadId,
-      Sender,
-      from,
-      to,
-      cc,
-      bcc,
-      subject,
-      snippet,
-      message,
-      labels,
-      attachments,
-      modifiedTime,
-      trashed,
-  } = processedEmail;
-
-  return `
-Email Metadata:
-- ID: ${id || "Unknown"}
-- Thread ID: ${threadId || "Unknown"}
-- Sender: ${Sender || "Unknown"} (${from || "Unknown"})
-- Recipients: ${to && to.length > 0 ? to.join(", ") : "None"}
-- CC: ${cc && cc.length > 0 ? cc.join(", ") : "None"}
-- BCC: ${bcc && bcc.length > 0 ? bcc.join(", ") : "None"}
-
-Subject and Content:
-- Subject: ${subject || "No Subject"}
-- Snippet: ${snippet || "No Snippet"}
-- Body: ${message || "No Message"}
-
-Labels and Attachments:
-- Labels: ${labels && labels.length > 0 ? labels.join(", ") : "No Labels"}
-- Attachments: ${
-      attachments && attachments.length > 0
-          ? attachments.map(a => `${a.name} (${a.mimeType || "Unknown Type"})`).join(", ")
-          : "No Attachments"
+    }));
+    await Filedata.bulkWrite(bulkOperations);
+    if (bulkOperations.length > 0) {
+      const id = bulkOperations?.updateOne?.update?.$set?.doc_id
+      const processedEmail = bulkOperations?.updateOne?.update?.$set?.data
+      const processedEmailText = await generateConversationEmbedding(processedEmail);
+      const metaData = {id,user_id }
+      embeddingQueue.add({ token, id: threadId, app: GMAIL_STR, text: processedEmailText, metaData }, { jobId: `embedding_${threadId}`, delay: QUEUE_DELAY })
+        .then((job) => console.log(`Job added: ${job.id}`))
+        .catch((err) => console.error('Error adding job to queue:', err));
+    }
+    return true
+  } catch (error) {
+    console.log(error)
+    return false
   }
-
-Other Details:
-- Last Modified: ${modifiedTime || "Unknown"}
-- Trashed: ${trashed ? "Yes" : "No"}
-`.trim();
 }
+
+

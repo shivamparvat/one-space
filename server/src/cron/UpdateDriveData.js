@@ -1,17 +1,15 @@
 import { google } from "googleapis";
 import { GOOGLE_DRIVE_STR } from "../constants/appNameStr.js";
-import { authorizeGoogleDrive, dataOrganizer } from "../helper/metaData/drive.js";
+import { authorizeGoogleDrive, dataOrganizer, UnembeddingDriveFilesType } from "../helper/metaData/drive.js";
 import AppToken from "../Schema/apptoken.js";
 import User from "../Schema/userSchema.js";
 import Filedata from "../Schema/fileMetadata.js";
-import { createGoolgeDriveEmbedding } from "../helper/Embedding.js";
 import cache from "../redis/cache.js";
 import embeddingQueue from "../Queue/embeddingQueue.js";
 
 const QUEUE_DELAY = 1000 * 60
 
 export async function UpdateDriveData() {
-  console.log("update func")
   try {
     const cacheTokenKey = `tokens_${GOOGLE_DRIVE_STR}`
     // Retrieve all active users
@@ -97,8 +95,11 @@ async function listChanges(token, drive, startPageToken, user) {
               user_id,
               data: dataOrganizer(fileMetadata),
             })
-            embeddingQueue.add({ token, id, app: GOOGLE_DRIVE_STR }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
-              .catch((err) => console.error('Error adding job to queue:', err));
+
+            if (!(fileMetadata?.mimeType && UnembeddingDriveFilesType.includes(fileMetadata.mimeType))) {
+              embeddingQueue.add({ token, id, app: GOOGLE_DRIVE_STR }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
+                .catch((err) => console.error('Error adding job to queue:', err));
+            }
           } else {
             if (+fileMetadata.version > +previousMetadata.version) {
               await Filedata.updateOne(
@@ -106,8 +107,11 @@ async function listChanges(token, drive, startPageToken, user) {
                 { $set: { data: dataOrganizer(fileMetadata) } },
                 { upsert: true }
               );
-              embeddingQueue.add({ token, id, app: GOOGLE_DRIVE_STR }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
-                .catch((err) => console.error('Error adding job to queue:', err));
+
+              if (!(fileMetadata?.mimeType && UnembeddingDriveFilesType.includes(fileMetadata.mimeType))) {
+                embeddingQueue.add({ token, id, app: GOOGLE_DRIVE_STR }, { jobId: `embedding_${id}`, delay: QUEUE_DELAY }).then((job) => console.log(`Job added: ${job.id}`))
+                  .catch((err) => console.error('Error adding job to queue:', err));
+              }
             }
           }
 
@@ -125,18 +129,4 @@ async function listChanges(token, drive, startPageToken, user) {
 async function getPreviousMetadata(ResourceID, organization, user_id) {
   const prefile = await Filedata.findOne({ doc_id: ResourceID, organization, user_id })
   return prefile?.data
-}
-
-
-async function getFileMetadata(drive, ResourceID) {
-  try {
-    const response = await drive.files.get({
-      fileId: ResourceID,
-      fields: "*"
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching file metadata:", error);
-    throw error;
-  }
 }

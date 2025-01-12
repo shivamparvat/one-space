@@ -67,14 +67,11 @@ export async function initEmbedding(req, res, permissions = false) {
             const fileId = file?.id;
             const embeddingFilesType = ["application/zip","application/x-compressed", "application/rar",  "application/vnd.google-apps.folder", "image/jpeg",  "image/png", "image/gif", "image/bmp", "image/webp", "image/svg+xml", "image/tiff", "image/x-icon", "image/vnd.microsoft.icon"];
 
-            // if ((file?.mimeType && embeddingFilesType.includes(file.mimeType))) {
-            //   console.log(file?.mimeType)
-            // }
             if (!(file?.mimeType && embeddingFilesType.includes(file.mimeType))) {
               const embeddingResult = await createGoolgeDriveEmbedding(
                 authClient,
                 fileId,
-                file
+                user_id
               );
     
               if (!embeddingResult.success) {

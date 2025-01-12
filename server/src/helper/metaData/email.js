@@ -1,11 +1,12 @@
 import { google } from "googleapis";
-import { convert }  from "html-to-text";
+import { convert } from "html-to-text";
 import { GMAIL_STR } from "../../constants/appNameStr.js";
 import { authorizeGoogleDrive } from "./drive.js";
 import Filedata from "../../Schema/fileMetadata.js";
 import fs from "fs"
 import cache from "../../redis/cache.js";
 import User from "../../Schema/userSchema.js";
+import { createGmailEmbedding } from "../Embedding.js";
 
 
 export async function getEmailsFromGmail(accessToken, user_id, organization) {
@@ -13,8 +14,13 @@ export async function getEmailsFromGmail(accessToken, user_id, organization) {
     const authClient = await authorizeGoogleDrive(accessToken);
     const emails = await listGmailMessagesRecursively(authClient, user_id, organization);
 
-    await Filedata.bulkWrite(emails);
-    console.log("email updated ")
+    // await Filedata.bulkWrite(emails);
+    emails.map(async (email) => {
+      const document = email?.updateOne?.update?.$set.data
+      const processedEmailText = await generateConversationEmbedding(document);
+      const metaData = { user_id }
+      const embeddingResponce = await createGmailEmbedding(authClient, id, processedEmailText,metaData)
+    })
   } catch (error) {
     console.log(error, "error")
   }
@@ -90,7 +96,7 @@ export async function listGmailMessagesRecursively(authClient, user_id, organiza
     for (const message of messages) {
       const emailData = await loadGmailMessage(authClient, message.id);
       const threadId = emailData.threadId;
-      console.log("processing...",threadId)
+      console.log("processing...", threadId)
       // Process email data
       const processedEmail = await processEmailData(emailData, user_id);
 
@@ -119,8 +125,8 @@ export async function listGmailMessagesRecursively(authClient, user_id, organiza
           organization,
           data: {
             emails: group.email,
-            modifiedTime: (group.email||[])[0]?.modifiedTime,
-            thread:(group.email||[]).every((message) =>
+            modifiedTime: (group.email || [])[0]?.modifiedTime,
+            thread: (group.email || []).every((message) =>
               message.labels && message.labels.includes("TRASH")
             )
           },
@@ -238,7 +244,7 @@ export function getHeader(headers, name) {
 
 export function extractMessageBody(payload) {
   let body = "";
-  
+
   if (payload.body && payload.body.data) {
     body = Buffer.from(payload.body.data, "base64").toString("utf-8");
   } else if (payload.parts) {
@@ -325,12 +331,6 @@ export async function processEmailData(emailData, user_id) {
 }
 
 
-function extractEmail(str) {
-  const emailRegex = /<([^>]+)>/;
-  const match = str.match(emailRegex);
-  return match ? match[1] : null; // Return the email if found, otherwise null
-}
-
 
 export function extractEmailStr(str) {
   const emailRegex = /<([^>]+)>/;
@@ -343,4 +343,62 @@ export function extractEmailStr(str) {
 
 
 
+
+
+
+export function generateConversationEmbedding(data) {
+  if (!data || !Array.isArray(data.emails)) {
+      throw new Error("Invalid data format");
+  }
+
+  return data.emails.map(email => generateEmbeddingText(email));
+}
+
+
+
+function generateEmbeddingText(processedEmail) {
+  const {
+      id,
+      threadId,
+      Sender,
+      from,
+      to,
+      cc,
+      bcc,
+      subject,
+      snippet,
+      message,
+      labels,
+      attachments,
+      modifiedTime,
+      trashed,
+  } = processedEmail;
+
+  return `
+Email Metadata:
+- ID: ${id || "Unknown"}
+- Thread ID: ${threadId || "Unknown"}
+- Sender: ${Sender || "Unknown"} (${from || "Unknown"})
+- Recipients: ${to && to.length > 0 ? to.join(", ") : "None"}
+- CC: ${cc && cc.length > 0 ? cc.join(", ") : "None"}
+- BCC: ${bcc && bcc.length > 0 ? bcc.join(", ") : "None"}
+
+Subject and Content:
+- Subject: ${subject || "No Subject"}
+- Snippet: ${snippet || "No Snippet"}
+- Body: ${message || "No Message"}
+
+Labels and Attachments:
+- Labels: ${labels && labels.length > 0 ? labels.join(", ") : "No Labels"}
+- Attachments: ${
+      attachments && attachments.length > 0
+          ? attachments.map(a => `${a.name} (${a.mimeType || "Unknown Type"})`).join(", ")
+          : "No Attachments"
+  }
+
+Other Details:
+- Last Modified: ${modifiedTime || "Unknown"}
+- Trashed: ${trashed ? "Yes" : "No"}
+`.trim();
+}
 

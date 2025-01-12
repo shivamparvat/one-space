@@ -3,13 +3,23 @@ import { GOOGLE_DRIVE_STR } from "../../constants/appNameStr.js";
 import Filedata from "../../Schema/fileMetadata.js";
 import cache from "../../redis/cache.js";
 import User from "../../Schema/userSchema.js";
+import { createGoolgeDriveEmbedding } from "../Embedding.js";
 
 
+export const UnembeddingDriveFilesType = ["application/zip", "application/x-compressed", "application/rar", "application/vnd.google-apps.folder", "image/jpeg", "image/png", "image/gif", "image/bmp", "image/webp", "image/svg+xml", "image/tiff", "image/x-icon", "image/vnd.microsoft.icon"];
 
-export async function getFilesFromDrive(accessToken, user_id, organization){
+export async function getFilesFromDrive(accessToken, user_id, organization) {
   const authClient = await authorizeGoogleDrive(accessToken);
-  const files = await listGoogleDriveFilesRecursively(authClient,user_id, organization);
+  const files = await listGoogleDriveFilesRecursively(authClient, user_id, organization);
   await Filedata.bulkWrite(files);
+  files.map(async (file)=>{
+    const document = file.updateOne.update.$set.data
+    const id = document?.id
+
+    if (!(document?.mimeType && UnembeddingDriveFilesType.includes(document.mimeType))) {
+      const embeddingResponce = await createGoolgeDriveEmbedding(authClient,id,user_id)
+    }
+  })
 }
 
 
@@ -54,9 +64,6 @@ export function listGoogleDriveFiles(auth, pageSize = 1000, folderId = "root") {
     );
   });
 }
-
-
-
 
 
 export async function loadGoogleDriveFile(auth, fileId, mimeType = 'application/pdf') {
@@ -156,6 +163,7 @@ export async function listGoogleDriveFilesRecursively(authClient, user_id, organ
       fileDataToInsert.push(...subfolderFiles);
     } else {
       // Add file data to the batch
+
       const data = await dataOrganizer(file, user_id)
       fileDataToInsert.push({
         updateOne: {
@@ -181,30 +189,32 @@ export async function listGoogleDriveFilesRecursively(authClient, user_id, organ
 
 export async function dataOrganizer(data, user_id) {
   const cacheKey = `org_user_${user_id}`
-  let user = await cache.get(cacheKey) 
-  if(!user){
+  let user = await cache.get(cacheKey)
+  if (!user) {
     user = await User.findById(user_id).populate("organization");
-    await cache.set(cacheKey,user,60*60*5) 
+    await cache.set(cacheKey, user, 60 * 60 * 5)
   }
   const organization = user?.organization
 
   const organizationDomain = organization?.domain
 
 
-    const result = (data.permissions||[]).reduce(
-      (acc, { emailAddress }) => {
-        if (!emailAddress) return acc;
-        emailAddress.endsWith(`@${organizationDomain}`)
-          ? acc.internal.push(emailAddress)
-          : acc.external.push(emailAddress);
+  const result = (data.permissions || []).reduce(
+    (acc, { emailAddress }) => {
+      if (!emailAddress) return acc;
+      emailAddress.endsWith(`@${organizationDomain}`)
+        ? acc.internal.push(emailAddress)
+        : acc.external.push(emailAddress);
 
-        return acc;
-      },
-      { internal: [], external: [] }
-    );
-    data = {...data, internalCount: result.internal.length,
-      externalCount: result.external.length,
-      internalUsers: result.internal,
-      externalUsers: result.external}
-    return data
+      return acc;
+    },
+    { internal: [], external: [] }
+  );
+  data = {
+    ...data, internalCount: result.internal.length,
+    externalCount: result.external.length,
+    internalUsers: result.internal,
+    externalUsers: result.external
+  }
+  return data
 }  

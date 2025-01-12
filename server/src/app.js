@@ -60,7 +60,8 @@ app.use("/api/v1/user", userRouter);
 
 cron.schedule("*/5 * * * *", () => {
   UpdateDriveData();
-  UpdateEmailData()
+  UpdateEmailData();
+  console.log("cron End")
 });
 // app.use('/api', googleDriveRoutes);
 

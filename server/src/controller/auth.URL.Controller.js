@@ -54,7 +54,6 @@ export async function GoogleCallback(req, res) {
         state: GOOGLE_DRIVE_STR,
       });
       await newAuth.save();
-
       getFilesFromDrive(
         {
           ...tokens,
@@ -63,6 +62,7 @@ export async function GoogleCallback(req, res) {
         user_id,
         organization
       );
+
     } else if (appName == GMAIL_STR) {
       const newAuth = new AppToken({
         user_id,
@@ -71,10 +71,6 @@ export async function GoogleCallback(req, res) {
         state: GMAIL_STR,
       });
       await newAuth.save();
-      console.log({
-        ...tokens,
-        state: GMAIL_STR,
-      })
       getEmailsFromGmail(
         {
           ...tokens,
