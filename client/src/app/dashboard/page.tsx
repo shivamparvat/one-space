@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation"
 import { Progress } from "@/components/ui/progress";
+import CardCantainer from "./components/cards/CardCantainer"
 
 export interface RagOutputType {
   query: string;
@@ -283,6 +284,7 @@ export default function Page() {
      </div>
         
         <RagOutput query={searchQuery} setQuery={setSearchQuery} data={data} setData={setData}/>
+        <CardCantainer data={files}/>
         <DataTable data={files|| []} />
       </div>}
     </div>

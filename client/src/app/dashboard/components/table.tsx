@@ -211,19 +211,6 @@ export const columns: ColumnDef<any>[] = [
     cell: ({ row }) => {
       const Filedata = row.original?.data
 
-
-      // {
-      //   "id": "16452530556112605674",
-      //   "displayName": "ankit izardar",
-      //   "type": "user",
-      //   "kind": "drive#permission",
-      //   "photoLink": "https://lh3.googleusercontent.com/a-/ALV-UjUaCmNaiEwcAYT0loaZAmvlgvnsc1oJy8Qcj3Gcyv5dj2ZN9wuuEg=s64",
-      //   "emailAddress": "ankitizardar93@gmail.com",
-      //   "role": "writer",
-      //   "deleted": false,
-      //   "pendingOwner": false
-      // },
-
       return (
         <Sheet>
           <SheetTrigger>Details</SheetTrigger>

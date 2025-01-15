@@ -39,7 +39,7 @@ export const fileMetadata = async (req, res) => {
     }
     for (const app of connectedApps) {
       const { state } = app;
-      orQurey.push({app_name:state})
+      orQurey.push(state)
       }
 
       const mainCache = `file_${user_id}_${organization}_${page}_${limit}`;
@@ -52,14 +52,25 @@ export const fileMetadata = async (req, res) => {
       if ((cachedData || []).length > 0) {
         results = [...results, ...cachedData];
       } else {
-        const dbData = await Filedata.find({
+
+        console.log(JSON.stringify({
           organization,
           user_id,
           ...searchFilter,
           $or: [
             { "data.trashed": false }, 
             { "data.trashed": { $exists: false } },
-            ...orQurey
+            { app_name: { $in: orQurey } }
+          ],
+        }),null,2)
+        const dbData = await Filedata.find({
+          organization,
+          user_id,
+          ...searchFilter,
+          $or: [
+            // { "data.trashed": false }, 
+            // { "data.trashed": { $exists: false } },
+            { app_name: { $in: orQurey } }
           ],
         })
           .select('-chunks.embedding')
