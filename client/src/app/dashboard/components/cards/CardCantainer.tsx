@@ -35,9 +35,8 @@ const getExportFormat = (url: any) => {
 function CardCantainer({ data: Filedata }: any) {
 
     return (
-        <div>
+        <div className="flex flex-col gap-x-4 gap-y-4">
             {(Filedata || []).map((file: any) => {
-                console.log(file)
                 const internalCount: number = (file?.data?.internalCount || []);
                 const internalUsers: string[] = (file?.data?.internalUsers || []);
 
@@ -53,8 +52,8 @@ function CardCantainer({ data: Filedata }: any) {
 
                 const Modifyuser: any = file?.data?.lastModifyingUser;
 
-                return <div className="flex gap-x-4 gap-y-4 w-full">
-                    <div className="flex items-start space-x-2 w-12 ">
+                return <div className="flex w-full">
+                    <div className="flex items-start space-x-4 w-12 ">
                         {user?.photoLink && (
                             <img
                                 src={`${BASE_URL}/proxy-image?url=${user?.photoLink}`}
@@ -65,29 +64,29 @@ function CardCantainer({ data: Filedata }: any) {
                         )}
                     </div>
                     <div className="w-full">
-                        <h3 className="capitalize">{user?.displayName}</h3>
+                        <div className="flex mb-2">
+                            <h3 className="capitalize">{user?.displayName}</h3>
+                            <div className="ms-2">
+                                Lest Modify By
+                            </div>
+                            <div className="flex items-center space-x-2 ms-2">
+                                {Modifyuser?.photoLink && (
+                                    <img
+                                        src={`${BASE_URL}/proxy-image?url=${Modifyuser?.photoLink}`}
+                                        alt={Modifyuser?.displayName}
+                                        className="w-5 h-5 rounded-full"
+                                        loading="lazy"
+                                    />
+                                )}
+                                <span className="capitalize">{Modifyuser?.displayName}</span>
+                            </div>
+                        </div>
                         <Card className="w-full">
                             <CardHeader className="p-4">
                                 <div className="flex justify-between">
                                     <div>
-                                        <CardDescription className="flex mb-2">
-                                            <div>
-                                                Lest Modify By
-                                            </div>
-                                            <div className="flex items-center space-x-2 ms-2">
-                                                {Modifyuser?.photoLink && (
-                                                    <img
-                                                        src={`${BASE_URL}/proxy-image?url=${Modifyuser?.photoLink}`}
-                                                        alt={Modifyuser?.displayName}
-                                                        className="w-5 h-5 rounded-full"
-                                                        loading="lazy"
-                                                    />
-                                                )}
-                                                <span className="capitalize">{Modifyuser?.displayName}</span>
-                                            </div>
-                                        </CardDescription>
                                         <CardTitle>
-                                            <a href={webViewLink} target="_blank"><div className="flex items-center space-x-2">
+                                            <a href={webViewLink} target="_blank"><div className="flex items-center space-x-2 w-[70%]">
                                                 {iconLink && (
                                                     <img
                                                         src={`${BASE_URL}/proxy-image?url=${iconLink}`}
@@ -96,7 +95,7 @@ function CardCantainer({ data: Filedata }: any) {
                                                         loading="lazy"
                                                     />
                                                 )}
-                                                <div className="w-[10%] capitalize truncate">{name}</div>
+                                                <div className="capitalize truncate" style={{ width: "60vw" }}>{name}</div>
                                             </div>
                                             </a>
                                         </CardTitle>

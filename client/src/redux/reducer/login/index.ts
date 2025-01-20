@@ -13,8 +13,8 @@ const userLoginSlice = createSlice({
       window.localStorage.setItem('userToken', JSON.stringify(action.payload)); 
     },
     removeToken: (state) => {
-      state.userToken = null;
       window.localStorage.removeItem('userToken');
+      state.userToken = null;
     },
     getToken: (state) => {
       const strData = window.localStorage.getItem('userToken')

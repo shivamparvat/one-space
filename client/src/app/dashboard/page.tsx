@@ -6,7 +6,7 @@ import axios from "axios"
 import {DataTable} from "./components/table"
 import RagOutput from "./components/RagOutput"
 import { useSelector } from "react-redux"
-import { RootState } from "@/redux/store"
+import { dispatch, RootState } from "@/redux/store"
 import { Input } from "@/components/ui/input"
 import { Toggle } from "@/components/ui/toggle"
 import { Card } from "@/components/ui/card"
@@ -24,6 +24,8 @@ import {
 import { useRouter } from "next/navigation"
 import { Progress } from "@/components/ui/progress";
 import CardCantainer from "./components/cards/CardCantainer"
+import { removeToken } from "@/redux/reducer/login"
+import AutoSuggest from "react-autosuggest";
 
 export interface RagOutputType {
   query: string;
@@ -57,6 +59,7 @@ export default function Page() {
         } catch (err:any) {
           setError('Failed to fetch files');
           if(err?.status == 401){
+            // dispatch(removeToken())
             router.replace("/login")
           }
         } finally {
@@ -107,7 +110,7 @@ export default function Page() {
     }
   };
 
-  console.log(eventData,error)
+  // console.log(eventData,error)
   function onSearch(){
     setData(null)
     // setFiles([])
@@ -125,11 +128,11 @@ export default function Page() {
   }, [token]);
 
 
-  useEffect(() => {
-    if(searchQuery){ 
-      autocompleteSearch(searchQuery);
-    }
-  }, [token,searchQuery]);
+  // useEffect(() => {
+  //   if(searchQuery){ 
+  //     ;
+  //   }
+  // }, [token,searchQuery]);
 
 
 
@@ -172,7 +175,7 @@ export default function Page() {
     eventSource.onmessage = (event) => {
       const response = JSON.parse(event.data);
 
-      console.log(response)
+      // console.log(response)
       if (response.status === 200) {
         console.log("Permission granted:", response.progress);
         setEventData(response); // Update state with response data
@@ -195,7 +198,10 @@ export default function Page() {
       setLoading(false);
     };
   };
-  
+
+
+
+  console.log("recommendation",recommendation)
 
   return (
     <div className="flex-col md:flex">
@@ -238,7 +244,7 @@ export default function Page() {
         </div>
 
         <div className="flex space-x-2">
-          <div className="w-full relative">
+          {/* <div className="w-full relative">
             <Input
               type="text"
               value={searchQuery}
@@ -273,7 +279,35 @@ export default function Page() {
                 </ul>
               </Card>
             )}      
-          </div>
+          </div> */}
+
+
+          <AutoSuggest
+            suggestions={recommendation}
+            onSuggestionsClearRequested={() => setRecommendation([])}
+            onSuggestionsFetchRequested={({ value }) => {
+              console.log(value,"g fdgkf hgkfjg")
+              autocompleteSearch(searchQuery)
+              // setSearchQuery(value);
+              // setRecommendation(value);
+            }}
+            onSuggestionSelected={(_, data) =>{
+              setSearchQuery(data?.suggestion?.filename)
+              console.log("Selected: " ,data?.suggestion)
+              }
+            }
+            getSuggestionValue={suggestion => suggestion.filename}
+            renderSuggestion={suggestion => <span>{suggestion.filename}</span>}
+            inputProps={{
+              placeholder: "search... ",
+              value: searchQuery,
+              onChange: (_, { newValue, method }) => {
+                setSearchQuery(newValue);
+              }
+            }}
+            highlightFirstSuggestion={true}
+          />
+
 
        <Button onClick={()=>{onSearch()}} disabled={loading}>
          {loading ? 'Searching...' : 'Search'}

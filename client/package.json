@@ -42,6 +42,7 @@
     "next-auth": "^4.24.10",
     "next-redux-wrapper": "^8.1.0",
     "react": "^18",
+    "react-autosuggest": "^10.1.0",
     "react-day-picker": "^8.10.0",
     "react-dom": "^18",
     "react-markdown": "^9.0.1",
@@ -56,6 +57,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
+    "@types/react-autosuggest": "^10.1.11",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.15",
