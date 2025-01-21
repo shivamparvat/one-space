@@ -319,7 +319,7 @@ export default function Page() {
         
         <RagOutput query={searchQuery} setQuery={setSearchQuery} data={data} setData={setData}/>
         <CardCantainer data={files}/>
-        <DataTable data={files|| []} />
+        {/* <DataTable data={files|| []} /> */}
       </div>}
     </div>
   )

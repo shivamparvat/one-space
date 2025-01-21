@@ -33,7 +33,7 @@ const getExportFormat = (url: any) => {
 
 
 
-function Drive({ file }: any) {
+function Email({ file }: any) {
 
     const internalCount: number = (file?.data?.internalCount || []);
     const internalUsers: string[] = (file?.data?.internalUsers || []);
@@ -259,4 +259,4 @@ function Drive({ file }: any) {
     )
 }
 
-export default Drive
+export default Email
