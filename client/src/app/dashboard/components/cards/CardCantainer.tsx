@@ -43,8 +43,8 @@ function CardCantainer({ data: Filedata }: any) {
                     return <Drive file={file}/>
                 }else if(file?.app_name == "GMAIL"){
                     return <Email file={file}/>
-                }else if(file?.app_name == "GMAIL"){
-                    return <Email file={file}/>
+                }else {
+                    
                 }
             })}
         </div>

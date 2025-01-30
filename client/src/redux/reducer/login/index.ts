@@ -1,29 +1,27 @@
-import {createSlice} from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-const initialState:any = {
-  userToken: window.localStorage.getItem('userToken') || null, // Read token from localStorage on app load
+interface AuthState {
+  userToken: any | null;
+}
+
+const initialState: AuthState = {
+  userToken: typeof window !== 'undefined' ? localStorage.getItem('userToken') : null,
 };
 
-const userLoginSlice = createSlice({
-  name: "login",
+const authSlice = createSlice({
+  name: 'auth',
   initialState,
   reducers: {
-    setToken: (state, action) => {
+    setToken: (state, action: PayloadAction<string>) => {
       state.userToken = action.payload;
-      window.localStorage.setItem('userToken', JSON.stringify(action.payload)); 
+      localStorage.setItem('userToken', action.payload);
     },
-    removeToken: (state) => {
-      window.localStorage.removeItem('userToken');
+    clearToken: (state) => {
       state.userToken = null;
+      localStorage.removeItem('userToken');
     },
-    getToken: (state) => {
-      const strData = window.localStorage.getItem('userToken')
-      const JsonData = strData?JSON.parse(strData): null
-      state.userToken =  JsonData;
-    }
   },
 });
 
-export const {setToken, removeToken, getToken} = userLoginSlice.actions;
-
-export default userLoginSlice.reducer;
+export const { setToken, clearToken } = authSlice.actions;
+export default authSlice.reducer;

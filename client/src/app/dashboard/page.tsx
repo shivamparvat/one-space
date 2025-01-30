@@ -24,8 +24,9 @@ import {
 import { useRouter } from "next/navigation"
 import { Progress } from "@/components/ui/progress";
 import CardCantainer from "./components/cards/CardCantainer"
-import { removeToken } from "@/redux/reducer/login"
+import { clearToken } from "@/redux/reducer/login"
 import AutoSuggest from "react-autosuggest";
+import { useAuth } from "../authProvider"
 
 export interface RagOutputType {
   query: string;
@@ -44,8 +45,13 @@ export default function Page() {
   const token = useSelector((state: RootState) => state.login.userToken);
   const [aiToggle, setAiToggle] = useState(false)
   const [connectedApp, setConnectedApp] = useState(true)
-  const router = useRouter();
+  const { isAuthenticated } = useAuth();
 
+  const router = useRouter();
+  
+  if (!isAuthenticated) {
+    return <div>Loading...</div>;
+  }
     
   const fetchFiles = async (searchStr:string) => {
         try {
@@ -59,7 +65,7 @@ export default function Page() {
         } catch (err:any) {
           setError('Failed to fetch files');
           if(err?.status == 401){
-            // dispatch(removeToken())
+            dispatch(clearToken())
             router.replace("/login")
           }
         } finally {

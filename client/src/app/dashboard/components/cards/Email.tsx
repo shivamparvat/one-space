@@ -35,6 +35,7 @@ const getExportFormat = (url: any) => {
 
 function Email({ file }: any) {
 
+    const emails: any[] = file?.data?.emails;
     const internalCount: number = (file?.data?.internalCount || []);
     const internalUsers: string[] = (file?.data?.internalUsers || []);
 
@@ -77,7 +78,7 @@ function Email({ file }: any) {
                                         loading="lazy"
                                     />
                                 )}
-                                <span className="capitalize">{Modifyuser?.displayName}</span>
+                                <span className="capitalize">{(emails || [])[0]?.displayName}</span>
                             </div>
                         </div>
                         <Card className="w-full">
@@ -94,7 +95,7 @@ function Email({ file }: any) {
                                                         loading="lazy"
                                                     />
                                                 )}
-                                                <div className="capitalize truncate" style={{ width: "60vw" }}>{name}</div>
+                                                <div className="capitalize truncate" style={{ width: "60vw" }}>{(emails || [])[0]?.subject}</div>
                                             </div>
                                             </a>
                                         </CardTitle>

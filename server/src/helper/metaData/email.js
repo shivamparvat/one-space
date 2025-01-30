@@ -19,7 +19,7 @@ export async function getEmailsFromGmail(accessToken, user_id, organization) {
       const document = email?.updateOne?.update?.$set.data
       const processedEmailText = await generateConversationEmbedding(document);
       const metaData = { user_id }
-      const embeddingResponce = await createGmailEmbedding(authClient, id, processedEmailText,metaData)
+      const embeddingResponce = await createGmailEmbedding(authClient, id, processedEmailText, metaData)
     })
   } catch (error) {
     console.log(error, "error")
@@ -348,7 +348,7 @@ export function extractEmailStr(str) {
 
 export function generateConversationEmbedding(data) {
   if (!data || !Array.isArray(data.emails)) {
-      throw new Error("Invalid data format");
+    throw new Error("Invalid data format");
   }
 
   return data.emails.map(email => generateEmbeddingText(email));
@@ -358,20 +358,20 @@ export function generateConversationEmbedding(data) {
 
 function generateEmbeddingText(processedEmail) {
   const {
-      id,
-      threadId,
-      Sender,
-      from,
-      to,
-      cc,
-      bcc,
-      subject,
-      snippet,
-      message,
-      labels,
-      attachments,
-      modifiedTime,
-      trashed,
+    id,
+    threadId,
+    Sender,
+    from,
+    to,
+    cc,
+    bcc,
+    subject,
+    snippet,
+    message,
+    labels,
+    attachments,
+    modifiedTime,
+    trashed,
   } = processedEmail;
 
   return `
@@ -379,9 +379,9 @@ Email Metadata:
 - ID: ${id || "Unknown"}
 - Thread ID: ${threadId || "Unknown"}
 - Sender: ${Sender || "Unknown"} (${from || "Unknown"})
-- Recipients: ${to && to.length > 0 ? to.join(", ") : "None"}
-- CC: ${cc && cc.length > 0 ? cc.join(", ") : "None"}
-- BCC: ${bcc && bcc.length > 0 ? bcc.join(", ") : "None"}
+- Recipients: ${to && to.length > 0 ? (to || []).join(", ") : "None"}
+- CC: ${cc && cc.length > 0 ? (cc || []).join(", ") : "None"}
+- BCC: ${bcc && bcc.length > 0 ? (bcc || []).join(", ") : "None"}
 
 Subject and Content:
 - Subject: ${subject || "No Subject"}
@@ -390,11 +390,10 @@ Subject and Content:
 
 Labels and Attachments:
 - Labels: ${labels && labels.length > 0 ? labels.join(", ") : "No Labels"}
-- Attachments: ${
-      attachments && attachments.length > 0
-          ? attachments.map(a => `${a.name} (${a.mimeType || "Unknown Type"})`).join(", ")
-          : "No Attachments"
-  }
+- Attachments: ${attachments && attachments.length > 0
+      ? attachments.map(a => `${a.name} (${a.mimeType || "Unknown Type"})`).join(", ")
+      : "No Attachments"
+    }
 
 Other Details:
 - Last Modified: ${modifiedTime || "Unknown"}

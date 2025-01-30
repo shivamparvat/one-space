@@ -1,69 +1,61 @@
-'use client';
+"use client";
 
-import {useRouter} from 'next/navigation';
-import React, {createContext, useContext, useEffect, useState, ReactNode} from 'react';
-import {useSelector} from 'react-redux';
-import {RootState} from '@/redux/store'; // Adjust the import path based on your project
-import {useDispatch} from 'react-redux';
-import {getToken, setToken} from '@/redux/reducer/login'; // Import your Redux action
+import { useRouter } from "next/navigation";
+import React, { createContext, useContext, useEffect, ReactNode } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/redux/store";
+import { setToken, clearToken } from "@/redux/reducer/login";
 
-// Define the AuthContext
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
+  login: (token: string) => void;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Props for the AuthProvider
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-// AuthProvider Component
-export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.login?.userToken?.token);
+  console.log(token)
 
-  // Get token from Redux state
-  const token = useSelector((state: RootState) => state.login.userToken);
+  useEffect(
+    () => {
+      if (!token) {
+        router.push("/login");
+      } else {
+        dispatch(setToken(token));
+      }
+    },
+    [token, router]
+  );
 
-  useEffect(() => {
-    // Check for token in Redux or fallback to localStorage
-    let storedToken = token?.token;
-    if (!storedToken) {
-      dispatch(getToken());
-    }
+  const login = (newToken: string) => {
+    dispatch(setToken(newToken));
+  };
 
-    // Set authentication status
-    // if (storedToken) {
-    //   setIsAuthenticated(true);
-    // } else {
-    //   setIsAuthenticated(false);
-    //   router.push('/login');
-    // }
-  }, [token, dispatch, router]);
-
-
-  // if (!isAuthenticated) {
-  //   router.replace("/login")
-  // } else {
-  //   router.replace("/dashboard")
-  // }
+  const logout = () => {
+    dispatch(clearToken());
+    router.push("/login");
+  };
 
   return (
-    <AuthContext.Provider value={{isAuthenticated, token}}>
+    <AuthContext.Provider value={{ isAuthenticated:!!token, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Hook to use AuthContext
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
